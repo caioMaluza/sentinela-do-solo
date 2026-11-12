@@ -9,6 +9,7 @@ export function useWeather(cluster) {
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
 
     setWeather(null);
     setError('');
@@ -41,18 +42,18 @@ export function useWeather(cluster) {
       })
 
       .then(data => {
-        setWeather(data.current);
+        if (active) setWeather(data.current || null);
       })
 
       .catch(error => {
-        if (error.name !== 'AbortError') {
+        if (active && error.name !== 'AbortError') {
           setError(
             'Clima indisponível no momento'
           );
         }
       });
 
-    return () => controller.abort();
+    return () => { active = false; controller.abort(); };
   }, [cluster.id]);
 
   return {

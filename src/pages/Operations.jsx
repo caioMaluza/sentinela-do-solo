@@ -209,10 +209,10 @@ export function CompanyPanel() {
             <Button
               variant="secondary"
               onClick={() =>
-                setStopped({
-                  ...stopped,
-                  [c.id]: !stopped[c.id]
-                })
+                setStopped(previous => ({
+                  ...previous,
+                  [c.id]: !previous[c.id]
+                }))
               }
             >
               {stopped[c.id]
@@ -224,9 +224,9 @@ export function CompanyPanel() {
       </div>
 
       <p className="muted mt-5">
-        Os dados são compartilhados com a Defesa Civil.
-        A empresa atua somente sobre sua operação;
-        a decisão de evacuação é do agente público.
+        Não há compartilhamento real nem integração com órgãos públicos.
+        A empresa simula apenas suas próprias operações;
+        evacuações reais cabem exclusivamente às autoridades.
       </p>
     </section>
   );

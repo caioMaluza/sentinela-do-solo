@@ -163,4 +163,3 @@ export async function api(request, env = {}) {
     return json({ error: 'Falha no armazenamento. Verifique a conexão Blob nos logs da Vercel.' }, 503);
   }
 }
-

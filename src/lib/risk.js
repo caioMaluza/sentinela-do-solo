@@ -3,7 +3,7 @@
 // ==================================================
 
 export function risk(rate, critical = 0.1) {
-  if (!Number.isFinite(rate) || rate < 0) {
+  if (!Number.isFinite(rate) || rate < 0 || !Number.isFinite(critical) || critical <= 0) {
     return 'unknown';
   }
 
@@ -56,6 +56,6 @@ export function distance(a, b) {
   return (
     6371000 *
     2 *
-    Math.asin(Math.sqrt(h))
+    Math.asin(Math.sqrt(Math.min(1, Math.max(0, h))))
   );
 }

@@ -1255,3 +1255,55 @@ form select,
     font-size: 10px;
   }
 }
+
+/* ==========================================
+   17. ACESSO DE TRIAGEM E MELHORIAS DE USABILIDADE
+========================================== */
+.brand {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-access {
+  padding: 19px 22px;
+  margin: 0 0 22px;
+}
+
+.admin-access h2 { margin-bottom: 7px; }
+
+.admin-access-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 12px;
+}
+
+.admin-access-row input {
+  width: min(100%, 340px);
+  margin: 0;
+}
+
+.admin-access-row .button { flex-shrink: 0; }
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #537b64;
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .admin-access { padding: 16px; }
+  .admin-access-row { align-items: stretch; }
+  .admin-access-row input, .admin-access-row .button { width: 100%; }
+  .report-row { flex-wrap: wrap; }
+  .report-actions { margin-left: auto; }
+}
