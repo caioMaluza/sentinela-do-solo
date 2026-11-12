@@ -1,41 +1,26 @@
-import {
-  list,
-  get,
-  put,
-  del
-} from '@vercel/blob';
-
+import { list, get, head, put, del } from '@vercel/blob';
 import { api } from '../worker/api.js';
 
+// Conecte um Vercel Blob *Private* ao projeto.
+// O token é utilizado exclusivamente no servidor, nunca no navegador.
 const storage = {
-  async list({ prefix, limit } = {}) {
-    const result = await list({ prefix, limit });
-
+  async list({ prefix = 'relatos/', limit = 100, cursor } = {}) {
+    const result = await list({ prefix, limit, ...(cursor ? { cursor } : {}) });
     return {
-      objects: result.blobs.map(blob => ({
-        key: blob.pathname
-      }))
+      objects: result.blobs.map(blob => ({ key: blob.pathname })),
+      cursor: result.cursor,
+      hasMore: result.hasMore
     };
   },
 
   async get(key) {
-    const result = await get(key, {
-      access: 'private'
-    });
-
-    if (!result || result.statusCode !== 200) {
-      return null;
-    }
-
-    return {
-      json: () => new Response(result.stream).json()
-    };
+    const result = await get(key, { access: 'private' });
+    if (!result || result.statusCode !== 200) return null;
+    return { json: async () => new Response(result.stream).json() };
   },
 
   async head(key) {
-    return Boolean(
-      await get(key, { access: 'private' })
-    );
+    return Boolean(await head(key));
   },
 
   async put(key, value) {
@@ -54,9 +39,10 @@ const storage = {
 };
 
 export default {
-  async fetch(request) {
+  fetch(request) {
     return api(request, {
-      BUCKET: storage
+      BUCKET: storage,
+      ADMIN_API_KEY: process.env.ADMIN_API_KEY
     });
   }
 };

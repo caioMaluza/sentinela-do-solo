@@ -1,10 +1,12 @@
 {
   "name": "sentinela-do-solo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build && node scripts/build-worker.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {

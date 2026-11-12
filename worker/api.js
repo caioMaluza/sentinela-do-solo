@@ -1,218 +1,146 @@
+// API compartilhada entre o Vite local e as Functions da Vercel.
+// Os indicadores são fictícios; esta API NÃO substitui a Defesa Civil.
 
-// ==================================================
-// RESPOSTA JSON
-// ==================================================
+const TYPES = ['Rachadura', 'Mina d’água', 'Inclinação de árvore', 'Movimentação de terra', 'Outro'];
+const STATUSES = ['Recebido', 'Em Vistoria', 'Confirmado', 'Descartado'];
+const REGIONS = ['brasilandia', 'jaragua', 'mboi'];
+const BODY_LIMIT = 2_200_000;
+const PHOTO_PATTERN = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+const PATH_PATTERN = /^\/api\/relatos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))?\/?$/i;
 
-const json = (value, status = 200) =>
-  new Response(
-    JSON.stringify(value),
-    {
-      status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-store'
-      }
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
     }
+  });
+}
+
+function validate(record) {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
+  return (
+    TYPES.includes(record.type) &&
+    REGIONS.includes(record.clusterId) &&
+    STATUSES.includes(record.status) &&
+    typeof record.description === 'string' &&
+    record.description.trim().length >= 10 &&
+    record.description.length <= 2000 &&
+    typeof record.address === 'string' &&
+    record.address.trim().length >= 1 &&
+    record.address.length <= 180 &&
+    (record.photo === undefined || record.photo === '' ||
+      (typeof record.photo === 'string' && PHOTO_PATTERN.test(record.photo)))
   );
+}
 
-// ==================================================
-// API PRINCIPAL
-// ==================================================
+function isAdmin(request, env) {
+  // Nunca envie esta chave para VITE_* ou para código frontend.
+  return typeof env.ADMIN_API_KEY === 'string' &&
+    env.ADMIN_API_KEY.length >= 12 &&
+    request.headers.get('x-admin-key') === env.ADMIN_API_KEY;
+}
 
-export async function api(request, env) {
-  const url = new URL(request.url);
+async function readRecords(storage) {
+  let cursor;
+  const keys = [];
 
-  const match = url.pathname.match(
-    /^\/api\/relatos(?:\/([a-f0-9-]{36}))?$/
-  );
-
-  if (!match) {
-    return json(
-      { error: 'Recurso não encontrado' },
-      404
-    );
+  // A SDK pagina os arquivos: apenas ler a primeira página perde relatos.
+  for (let page = 0; page < 20; page++) {
+    const batch = await storage.list({ prefix: 'relatos/', limit: 100, cursor });
+    keys.push(...batch.objects.map(entry => entry.key));
+    if (!batch.hasMore || !batch.cursor) break;
+    cursor = batch.cursor;
   }
 
-  if (!env.BUCKET) {
-    return json(
-      { error: 'O armazenamento não está disponível.' },
-      503
-    );
+  const found = [];
+  // Evitar centenas de downloads simultâneos contra o Blob.
+  for (let i = 0; i < keys.length; i += 15) {
+    const chunk = await Promise.all(keys.slice(i, i + 15).map(async key => {
+      try {
+        const obj = await storage.get(key);
+        return obj ? await obj.json() : null;
+      } catch {
+        return null;
+      }
+    }));
+    found.push(...chunk.filter(value => value && typeof value === 'object'));
   }
+
+  return found.sort((a, b) =>
+    String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
+  ).slice(0, 150); // Limite de exibição de um protótipo pequeno.
+}
+
+export async function api(request, env = {}) {
+  const path = new URL(request.url).pathname;
+  const match = path.match(PATH_PATTERN);
+  if (!match) return json({ error: 'Recurso não encontrado.' }, 404);
 
   const id = match[1];
-  const key = id ? 'relatos/' + id : null;
+  const key = id ? `relatos/${id}` : null;
+  const storage = env.BUCKET;
+  if (!storage) return json({ error: 'Armazenamento não configurado.' }, 503);
 
   try {
-    // ==============================================
-    // GET - LISTAR RELATOS
-    // ==============================================
-
     if (request.method === 'GET' && !id) {
-      const list = await env.BUCKET.list({
-        prefix: 'relatos/',
-        limit: 1000
-      });
-
-      const records = await Promise.all(
-        list.objects.map(async x => {
-          const obj = await env.BUCKET.get(x.key);
-
-          return obj ? obj.json() : null;
-        })
-      );
-
-      return json(
-        records
-          .filter(Boolean)
-          .sort((a, b) =>
-            b.createdAt.localeCompare(a.createdAt)
-          )
-      );
+      return json(await readRecords(storage));
     }
 
-    // ==============================================
-    // DELETE - EXCLUIR RELATO
-    // ==============================================
+    if ((request.method === 'PUT' && id) || (request.method === 'DELETE' && id)) {
+      if (typeof env.ADMIN_API_KEY !== 'string' || env.ADMIN_API_KEY.length < 12) {
+        return json({ error: 'ADMIN_API_KEY não configurada no servidor.' }, 503);
+      }
+      if (!isAdmin(request, env)) {
+        return json({ error: 'Acesso negado. Confira a chave da triagem.' }, 403);
+      }
+    }
 
     if (request.method === 'DELETE' && id) {
-      if (!(await env.BUCKET.head(key))) {
-        return json(
-          { error: 'Relato não encontrado' },
-          404
-        );
-      }
-
-      await env.BUCKET.delete(key);
-
-      return new Response(null, {
-        status: 204
-      });
+      if (!(await storage.head(key))) return json({ error: 'Relato não encontrado.' }, 404);
+      await storage.delete(key);
+      return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
     }
 
-    // ==============================================
-    // POST E PUT - CRIAR OU ATUALIZAR
-    // ==============================================
-
-    if (
-      (request.method === 'POST' && !id) ||
-      (request.method === 'PUT' && id)
-    ) {
-      // Verificar tamanho da requisição
-      if (
-        Number(request.headers.get('content-length')) >
-        2200000
-      ) {
-        return json(
-          { error: 'Imagem muito grande' },
-          413
-        );
+    if ((request.method === 'POST' && !id) || (request.method === 'PUT' && id)) {
+      const contentType = request.headers.get('content-type') || '';
+      if (!contentType.toLowerCase().includes('application/json')) {
+        return json({ error: 'Envie os dados em JSON.' }, 415);
       }
 
-      const text = await request.text();
+      const declaredSize = Number(request.headers.get('content-length') || 0);
+      if (declaredSize > BODY_LIMIT) return json({ error: 'Imagem ou relato grande demais.' }, 413);
 
-      if (text.length > 2200000) {
-        return json(
-          { error: 'Imagem muito grande' },
-          413
-        );
+      const raw = await request.text();
+      if (new TextEncoder().encode(raw).byteLength > BODY_LIMIT) {
+        return json({ error: 'Imagem ou relato grande demais.' }, 413);
       }
 
-      // Converter JSON
       let data;
-
       try {
-        data = JSON.parse(text);
+        data = JSON.parse(raw);
       } catch {
-        return json(
-          { error: 'JSON inválido' },
-          400
-        );
+        return json({ error: 'JSON inválido.' }, 400);
       }
 
-      // ============================================
-      // VALIDAR CAMPOS
-      // ============================================
-
-      if (
-        typeof data.description !== 'string' ||
-        data.description.trim().length < 10 ||
-        data.description.length > 2000 ||
-
-        typeof data.address !== 'string' ||
-        !data.address.trim() ||
-        data.address.length > 180 ||
-
-        ![
-          'brasilandia',
-          'jaragua',
-          'mboi'
-        ].includes(data.clusterId) ||
-
-        ![
-          'Rachadura',
-          'Mina d’água',
-          'Inclinação de árvore',
-          'Movimentação de terra',
-          'Outro'
-        ].includes(data.type) ||
-
-        ![
-          'Recebido',
-          'Em Vistoria',
-          'Confirmado',
-          'Descartado'
-        ].includes(data.status)
-      ) {
-        return json(
-          {
-            error: 'Confira os campos obrigatórios do relato.'
-          },
-          400
-        );
+      // Visitantes podem criar relatos, mas jamais escolher seu status de triagem.
+      if (!id && data && typeof data === 'object' && !Array.isArray(data)) {
+        data.status = 'Recebido';
+      }
+      if (!validate(data)) {
+        return json({ error: 'Confira os campos, a foto e os limites do relato.' }, 400);
       }
 
-      // ============================================
-      // VALIDAR IMAGEM
-      // ============================================
-
-      if (
-        data.photo &&
-        !/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(
-          data.photo
-        )
-      ) {
-        return json(
-          {
-            error: 'Formato de imagem não permitido. Use JPG, PNG ou WebP.'
-          },
-          400
-        );
-      }
-
-      // ============================================
-      // RECUPERAR REGISTRO ANTERIOR
-      // ============================================
-
-      let old = null;
-
+      let previous = null;
       if (id) {
-        const obj = await env.BUCKET.get(key);
-
-        if (!obj) {
-          return json(
-            { error: 'Relato não encontrado' },
-            404
-          );
-        }
-
-        old = await obj.json();
+        const obj = await storage.get(key);
+        if (!obj) return json({ error: 'Relato não encontrado.' }, 404);
+        previous = await obj.json();
       }
 
-      // ============================================
-      // CRIAR OBJETO DO RELATO
-      // ============================================
-
+      const now = new Date().toISOString();
       const record = {
         id: id || crypto.randomUUID(),
         type: data.type,
@@ -221,46 +149,18 @@ export async function api(request, env) {
         clusterId: data.clusterId,
         status: data.status,
         photo: data.photo || '',
-        createdAt:
-          old?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: previous?.createdAt || now,
+        updatedAt: now
       };
 
-      // ============================================
-      // SALVAR NO ARMAZENAMENTO
-      // ============================================
-
-      await env.BUCKET.put(
-        'relatos/' + record.id,
-        JSON.stringify(record),
-        {
-          httpMetadata: {
-            contentType: 'application/json'
-          }
-        }
-      );
-
-      return json(
-        record,
-        id ? 200 : 201
-      );
+      await storage.put(`relatos/${record.id}`, JSON.stringify(record));
+      return json(record, id ? 200 : 201);
     }
 
-    // ==============================================
-    // MÉTODO NÃO PERMITIDO
-    // ==============================================
-
-    return json(
-      { error: 'Método não permitido' },
-      405
-    );
-
-  } catch {
-    return json(
-      {
-        error: 'Não foi possível acessar os relatos. Tente novamente.'
-      },
-      500
-    );
+    return json({ error: 'Método não permitido.' }, 405);
+  } catch (error) {
+    console.error('Falha na API de relatos:', error);
+    return json({ error: 'Falha no armazenamento. Verifique a conexão Blob nos logs da Vercel.' }, 503);
   }
 }
+
