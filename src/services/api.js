@@ -1,0 +1,3 @@
+const base=import.meta.env.VITE_API_URL || '/api';
+export async function request(path,options={}) {const response=await fetch(base+path,{...options,headers:{'Content-Type':'application/json',...options.headers},signal:AbortSignal.timeout(15000)});if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||'Não foi possível concluir a operação. Tente novamente.')}return response.status===204?null:response.json();}
+export const reportsApi={list:()=>request('/relatos'),create:data=>request('/relatos',{method:'POST',body:JSON.stringify(data)}),update:(id,data)=>request('/relatos/'+id,{method:'PUT',body:JSON.stringify(data)}),remove:id=>request('/relatos/'+id,{method:'DELETE'})};
