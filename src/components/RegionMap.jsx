@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useMap } from 'react-leaflet';
 import {
   MapContainer,
   TileLayer,
@@ -12,10 +14,15 @@ import { risk } from '../lib/risk';
 import { SectionTitle, Badge } from './UI';
 import { useLocation } from '../hooks/useLocation';
 
-import {
-  LocateFixed,
-  ArrowUpRight
-} from 'lucide-react';
+import { LocateFixed } from 'lucide-react';
+
+function CenterOnGps({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) map.flyTo([position.lat, position.lon], 14);
+  }, [position, map]);
+  return null;
+}
 
 export function RegionMap({ cluster, expanded = false }) {
   const gps = useLocation();
@@ -35,6 +42,7 @@ export function RegionMap({ cluster, expanded = false }) {
           zoom={13}
           scrollWheelZoom={false}
         >
+          <CenterOnGps position={gps.position} />
           <TileLayer
             attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -100,6 +108,7 @@ export function RegionMap({ cluster, expanded = false }) {
         <button
           className="text-button"
           onClick={gps.locate}
+          disabled={gps.loading}
         >
           <LocateFixed size={16} />
 
@@ -119,30 +128,17 @@ export function RegionMap({ cluster, expanded = false }) {
 }
 
 export function ShelterRoute({ cluster }) {
-  const [lat, lon] = [
-    cluster.lat + 0.005,
-    cluster.lon + 0.005
-  ];
-
   return (
     <section className="card p-6">
-      <h2>Ponto de encontro demonstrativo</h2>
-
+      <h2>Exercício de evacuação · {cluster.name}</h2>
       <p className="muted my-3">
-        Coordenada fictícia para testar a navegação.
-        Não é um abrigo oficial nem uma rota validada
-        para emergências.
+        Não há abrigos ou rotas oficiais cadastrados neste protótipo.
+        Por segurança, o sistema não gera caminhos até coordenadas fictícias.
       </p>
-
-      <a
-        className="button"
-        target="_blank"
-        rel="noreferrer"
-        href={`https://www.google.com/maps/dir/?api=1&origin=${cluster.lat},${cluster.lon}&destination=${lat},${lon}&travelmode=walking`}
-      >
-        Testar rota a pé
-        <ArrowUpRight size={16} />
-      </a>
+      <p className="muted">
+        Em uma emergência real, siga exclusivamente as orientações das autoridades.
+        Defesa Civil: 199 · Bombeiros: 193.
+      </p>
     </section>
   );
 }

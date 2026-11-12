@@ -8,6 +8,8 @@ export function Checklist() {
     []
   );
 
+  const selected = Array.isArray(checked) ? checked.filter(x => Number.isInteger(x) && x >= 0 && x < checklist.length) : [];
+
   return (
     <section className="card checklist">
       <SectionTitle
@@ -15,14 +17,14 @@ export function Checklist() {
         title="Sua preparação começa aqui"
       >
         <Badge>
-          {checked.length}/{checklist.length}
+          {selected.length}/{checklist.length}
         </Badge>
       </SectionTitle>
 
       <div className="progress">
         <i
           style={{
-            width: (checked.length / checklist.length) * 100 + '%'
+            width: (selected.length / checklist.length) * 100 + '%'
           }}
         />
       </div>
@@ -31,13 +33,14 @@ export function Checklist() {
         <label className="check-item" key={item}>
           <input
             type="checkbox"
-            checked={checked.includes(i)}
+            checked={selected.includes(i)}
             onChange={() =>
-              setChecked(
-                checked.includes(i)
-                  ? checked.filter(x => x !== i)
-                  : [...checked, i]
-              )
+              setChecked(previous => {
+                const current = Array.isArray(previous) ? previous : [];
+                return current.includes(i)
+                  ? current.filter(x => x !== i)
+                  : [...current, i];
+              })
             }
           />
 

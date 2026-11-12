@@ -1,5 +1,9 @@
 node_modules/
 dist/
+.vercel/
 .env
-.openai/local*
+.env.*
+!.env.example
 .local-data/
+*.log
+.DS_Store

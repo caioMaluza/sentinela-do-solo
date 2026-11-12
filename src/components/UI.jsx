@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import {
   X,
   ShieldCheck,
@@ -52,6 +53,19 @@ export function Modal({
   children,
   onClose
 }) {
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const previous = document.activeElement;
+    const closeOnEscape = event => {
+      if (event.key === 'Escape') closeRef.current();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      previous?.focus?.();
+    };
+  }, []);
   return (
     <div
       className="modal-backdrop"
@@ -101,9 +115,9 @@ export function Sidebar({
 
   return (
     <aside className="sidebar">
-      <a
+      <button
+        type="button"
         className="brand"
-        href="#"
         onClick={() => setPage('overview')}
       >
         <span className="brand-icon">
@@ -116,7 +130,7 @@ export function Sidebar({
             DO SOLO
           </span>
         </span>
-      </a>
+      </button>
 
       <div className="workspace-label">
         ESPAÇO DA COMUNIDADE
@@ -141,6 +155,7 @@ export function Sidebar({
       <nav>
         {nav.map(([key, Icon, label]) => (
           <button
+            type="button"
             key={key}
             className={
               page === key

@@ -28,7 +28,7 @@ export function StatusBanner({
 
         <h2>
           {state === 'stable'
-            ? 'Tudo tranquilo por aqui.'
+            ? 'Cenário com leitura estável.'
             : state === 'evacuation'
               ? 'Simulação: siga para um local seguro.'
               : state === 'returned'
@@ -38,12 +38,12 @@ export function StatusBanner({
 
         <p>
           {state === 'stable'
-            ? 'Os indicadores demonstrativos estão estáveis. Continue acompanhando sua região.'
+            ? 'Esta é uma leitura simulada, não uma avaliação da segurança real da encosta.'
             : state === 'evacuation'
-              ? 'Evacuação autorizada no exercício acadêmico. Consulte o mapa demonstrativo.'
+              ? 'Evacuação simulada; nenhuma ordem real foi emitida. Não utilize o mapa para sair de casa.'
               : state === 'returned'
-                ? 'O movimento foi estabilizado e a vistoria registrada neste exercício.'
-                : 'O solo da sua região merece atenção. Organize o essencial e acompanhe as atualizações.'}
+                ? 'Este retorno foi autorizado somente na simulação, sem vistoria real.'
+                : 'O cenário ilustrativo indica atenção. Para situações reais, acompanhe avisos oficiais.'}
         </p>
 
         <Button

@@ -48,6 +48,7 @@ export default function App() {
   const [clusterId, setClusterId] = useState('brasilandia');
   const [form, setForm] = useState(false);
   const [safe, setSafe] = useState(false);
+  const [adminDraft, setAdminDraft] = useState('');
 
   const [decisions, setDecisions] = useStoredState(
     'sentinela-decisions',
@@ -58,10 +59,10 @@ export default function App() {
   // DADOS E HOOKS
   // ==================================================
 
-  const cluster = clusters.find(c => c.id === clusterId);
+  const cluster = clusters.find(c => c.id === clusterId) || clusters[0];
 
   const state =
-    decisions[clusterId] || risk(cluster.rate);
+    (decisions && typeof decisions === 'object' ? decisions[clusterId] : null) || risk(cluster.rate);
 
   const api = useReports();
 
@@ -177,6 +178,33 @@ export default function App() {
             </span>
           </div>
 
+          {profile === 'Defesa Civil' && (
+            <section className="card admin-access">
+              <h2>Acesso de triagem · somente demonstração</h2>
+              <p className="muted">
+                Simulações de evacuação funcionam localmente. Para editar, excluir ou
+                mudar a triagem dos relatos compartilhados é necessária a chave do servidor.
+              </p>
+              {api.adminKey ? (
+                <div className="admin-access-row">
+                  <span>Chave inserida nesta sessão (validada na próxima alteração).</span>
+                  <Button variant="secondary" onClick={() => api.setAdminKey('')}>Sair da triagem</Button>
+                </div>
+              ) : (
+                <form className="admin-access-row" onSubmit={event => {
+                  event.preventDefault();
+                  api.setAdminKey(adminDraft);
+                  setAdminDraft('');
+                }}>
+                  <input type="password" autoComplete="off" aria-label="Chave de triagem"
+                    placeholder="Chave de triagem" minLength={12} required
+                    value={adminDraft} onChange={event => setAdminDraft(event.target.value)} />
+                  <Button type="submit">Habilitar triagem</Button>
+                </form>
+              )}
+            </section>
+          )}
+
           {/* ===================================== */}
           {/* PÁGINA: VISÃO GERAL                  */}
           {/* ===================================== */}
@@ -194,10 +222,10 @@ export default function App() {
               <div className="metrics-grid">
                 <MetricCard
                   icon={CloudRain}
-                  title="Chuva agora"
+                  title="Precipitação recente"
                   value={
-                    weather
-                      ? weather.precipitation
+                    weather && Number.isFinite(weather.precipitation)
+                      ? weather.precipitation.toLocaleString('pt-BR')
                       : '—'
                   }
                   unit="mm"
@@ -264,10 +292,10 @@ export default function App() {
                   cluster={cluster}
                   decision={decisions[clusterId]}
                   onDecision={value =>
-                    setDecisions({
-                      ...decisions,
+                    setDecisions(previous => ({
+                      ...previous,
                       [clusterId]: value
-                    })
+                    }))
                   }
                 />
               )}
@@ -461,8 +489,9 @@ export default function App() {
 
           <p className="academic-note">
             Protótipo acadêmico · FIAP Global Solution 2026.2.
+            Indicadores de solo e decisões operacionais são simulados, não alertas reais.
             Não substitui monitoramento ou orientações oficiais.
-            Perfis são demonstrativos, sem autenticação por função.
+            Os perfis são demonstrativos e não comprovam vínculo com órgãos públicos.
           </p>
 
           <Footer />
@@ -476,6 +505,7 @@ export default function App() {
           cluster={cluster}
           onSave={api.save}
           busy={api.busy}
+          apiError={api.error}
           onClose={() => setForm(false)}
         />
       )}
