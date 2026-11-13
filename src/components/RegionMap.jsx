@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   MapContainer,
   TileLayer,
-  Circle,
+  WMSTileLayer,
+  Polygon,
+  Polyline,
   CircleMarker,
   Tooltip,
   useMap
@@ -13,36 +15,63 @@ import {
   LocateFixed,
   MapPin,
   Accessibility,
-  Users
+  Users,
+  Layers,
+  Radio,
+  Expand
 } from 'lucide-react';
 
 import 'leaflet/dist/leaflet.css';
 
 import { clusters } from '../data/clusters';
+import {
+  SOIL_TYPES,
+  soilZones,
+  getCoverageForSensor
+} from '../data/soilZones';
+
 import { labels, risk } from '../lib/risk';
 import { SectionTitle, Badge } from './UI';
 import { useLocation } from '../hooks/useLocation';
 
-const colors = {
-  stable: '#4f9b77',
-  returned: '#4f9b77',
-  attention: '#e0b244',
-  critical: '#d96165',
-  evacuation: '#d13e4c',
-  unknown: '#8795a8'
+const riskColors = {
+  stable: '#489574',
+  returned: '#489574',
+  attention: '#e2b547',
+  critical: '#cd4f4a',
+  evacuation: '#b92936',
+  unknown: '#8b918b'
 };
 
-function MapViewport({
+const priority = {
+  unknown: -1,
+  stable: 0,
+  returned: 0,
+  attention: 1,
+  critical: 2,
+  evacuation: 3
+};
+
+const CITY_BOUNDS = [
+  [-23.74, -46.85],
+  [-23.34, -46.36]
+];
+
+const WMS_URL =
+  'https://wms.geosampa.prefeitura.sp.gov.br/geoserver/geoportal/wms';
+
+function Viewport({
   cluster,
-  regions,
+  zones,
   overview,
+  focusedZone,
   shelters,
   selectedShelterId,
-  position
+  position,
+  resetRevision
 }) {
   const map = useMap();
-
-  const regionKey = regions.map(region => region.id).join(',');
+  const zoneKey = zones.map(zone => zone.id).join(',');
   const shelterKey = shelters.map(shelter => shelter.id).join(',');
 
   useEffect(() => {
@@ -52,32 +81,49 @@ function MapViewport({
       shelter => shelter.id === selectedShelterId
     );
 
-    const points = overview
-      ? regions.map(region => [region.lat, region.lon])
-      : [
+    const points = selected
+      ? [
           [cluster.lat, cluster.lon],
-          ...(selected ? [selected] : shelters).map(
-            shelter => [shelter.lat, shelter.lon]
-          )
-        ];
+          [selected.lat, selected.lon]
+        ]
+      : focusedZone
+        ? focusedZone.positions
+        : overview
+          ? zones.flatMap(zone => zone.positions)
+          : [
+              ...getCoverageForSensor(cluster.sensor)
+                .flatMap(zone => zone.positions),
+              ...shelters.map(shelter => [shelter.lat, shelter.lon])
+            ];
 
     if (points.length > 1) {
       map.fitBounds(points, {
-        padding: [44, 44],
+        padding: [30, 30],
         maxZoom: 14,
         animate: false
       });
     } else {
-      map.setView(points[0] || [cluster.lat, cluster.lon], 13);
+      map.setView([cluster.lat, cluster.lon], 13);
     }
   }, [
     map,
     cluster.id,
+    zoneKey,
     overview,
-    regionKey,
+    focusedZone?.id,
     shelterKey,
     selectedShelterId
   ]);
+
+  useEffect(() => {
+    if (resetRevision > 0) {
+      map.fitBounds(zones.flatMap(zone => zone.positions), {
+        padding: [30, 30],
+        maxZoom: 14,
+        animate: false
+      });
+    }
+  }, [map, resetRevision]);
 
   useEffect(() => {
     if (position) {
@@ -99,36 +145,147 @@ export function RegionMap({
   selectedShelterId,
   onSelectRegion,
   onSelectShelter,
-  title = 'Mapa das áreas monitoradas',
+  title = 'Solos e estacas do bairro',
   allowLocation = false
 }) {
   const gps = useLocation();
+
+  const [layer, setLayer] = useState('soil');
+  const [focusSelection, setFocusSelection] = useState(false);
+  const [selectedZoneId, setSelectedZoneId] = useState(null);
+  const [officialError, setOfficialError] = useState(false);
+  const [resetRevision, setResetRevision] = useState(0);
+
+  const previousCluster = useRef(cluster.id);
+
+  const allowedSensors = new Set(
+    regions.map(region => region.sensor)
+  );
+
+  const zones = soilZones.filter(zone =>
+    zone.sensorIds.some(id => allowedSensors.has(id))
+  );
+
+  const selectedZone =
+    zones.find(zone => zone.id === selectedZoneId)
+    || zones.find(zone => zone.sensorIds.includes(cluster.sensor))
+    || zones[0];
+
   const visibleShelters = showShelters ? shelters : [];
 
+  const linkedSensors = selectedZone
+    ? regions.filter(region =>
+        selectedZone.sensorIds.includes(region.sensor)
+      )
+    : [];
+
+  const coveredNeighborhoods = selectedZone
+    ? regions.filter(region =>
+        selectedZone.clusterIds.includes(region.id)
+      )
+    : [];
+
+  const soil = selectedZone
+    ? SOIL_TYPES[selectedZone.soilType]
+    : null;
+
+  useEffect(() => {
+    if (previousCluster.current !== cluster.id) {
+      setSelectedZoneId(null);
+      setFocusSelection(true);
+      previousCluster.current = cluster.id;
+    }
+  }, [cluster.id]);
+
+  function chooseZone(zone) {
+    setResetRevision(0);
+    setSelectedZoneId(zone.id);
+    setFocusSelection(true);
+
+    const reference = regions.find(region =>
+      zone.sensorIds.includes(region.sensor)
+    );
+
+    if (reference) onSelectRegion?.(reference.id);
+  }
+
+  function zoneState(zone) {
+    return regions
+      .filter(region => zone.sensorIds.includes(region.sensor))
+      .map(region => decisions[region.id] || risk(region.rate))
+      .reduce(
+        (highest, next) =>
+          priority[next] > priority[highest] ? next : highest,
+        'unknown'
+      );
+  }
+
   return (
-    <section className="card map-card">
+    <section className="card map-card territory-map">
       <SectionTitle title={title}>
         <Badge tone="neutral">
-          {regions.length}{' '}
-          {regions.length === 1
-            ? 'área ilustrativa'
-            : 'áreas ilustrativas'}
+          São Paulo · {regions.length} bairros
         </Badge>
       </SectionTitle>
+
+      <div
+        className="map-toolbar"
+        role="group"
+        aria-label="Camadas do mapa"
+      >
+        <span><Layers size={15} />Camadas</span>
+
+        {[
+          ['soil', 'Tipos de solo'],
+          ['risk', 'Risco simulado'],
+          ['official', 'Carta GeoSampa']
+        ].map(([id, label]) => (
+          <button
+            type="button"
+            key={id}
+            className={`map-layer-button ${layer === id ? 'active' : ''}`}
+            aria-pressed={layer === id}
+            onClick={() => {
+              setLayer(id);
+              setOfficialError(false);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+
+        <button
+          type="button"
+          className="map-layer-button map-fit"
+          onClick={() => {
+            setFocusSelection(false);
+            setResetRevision(previous => previous + 1);
+          }}
+        >
+          <Expand size={14} />
+          Ver recorte
+        </button>
+      </div>
 
       <div className={`map-wrap${expanded ? ' expanded' : ''}`}>
         <MapContainer
           center={[cluster.lat, cluster.lon]}
           zoom={13}
+          minZoom={11}
+          maxZoom={17}
+          maxBounds={CITY_BOUNDS}
+          maxBoundsViscosity={1}
           scrollWheelZoom={false}
         >
-          <MapViewport
+          <Viewport
             cluster={cluster}
-            regions={regions}
-            overview={overview}
+            zones={zones}
+            overview={!focusSelection || overview}
+            focusedZone={focusSelection ? selectedZone : null}
             shelters={visibleShelters}
             selectedShelterId={selectedShelterId}
             position={allowLocation ? gps.position : null}
+            resetRevision={resetRevision}
           />
 
           <TileLayer
@@ -136,70 +293,125 @@ export function RegionMap({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {regions.map(region => {
-            const state = decisions[region.id] || risk(region.rate);
-            const color = colors[state] || colors.unknown;
-            const selected = region.id === cluster.id;
+          {layer === 'official' && (
+            <WMSTileLayer
+              url={WMS_URL}
+              layers="carta_geotecnica"
+              styles=""
+              format="image/png"
+              transparent
+              opacity={0.65}
+              version="1.1.1"
+              eventHandlers={{
+                tileerror: () => setOfficialError(true)
+              }}
+              attribution="Carta Geotécnica 2024 · Prefeitura de São Paulo / GeoSampa"
+            />
+          )}
 
-            const eventHandlers = onSelectRegion
-              ? { click: () => onSelectRegion(region.id) }
-              : {};
+          {layer !== 'official' && zones.map(zone => {
+            const type = SOIL_TYPES[zone.soilType];
+            const selected = zone.id === selectedZone?.id;
 
             return (
-              <Circle
-                key={region.id}
-                center={[region.lat, region.lon]}
-                radius={overview ? 1900 : 780}
+              <Polygon
+                key={zone.id}
+                positions={zone.positions}
                 pathOptions={{
-                  color,
-                  fillColor: color,
-                  fillOpacity: selected ? 0.36 : 0.23,
-                  weight: selected ? 3 : 1.5
+                  color: selected ? '#203c31' : '#ffffff',
+                  weight: selected ? 3 : 1.5,
+                  fillColor: layer === 'soil'
+                    ? type.color
+                    : riskColors[zoneState(zone)],
+                  fillOpacity: selected ? 0.48 : 0.35,
+                  dashArray: selected ? '8 6' : undefined
                 }}
-                eventHandlers={eventHandlers}
+                eventHandlers={{
+                  click: () => chooseZone(zone)
+                }}
               >
-                <Tooltip permanent direction="top">
-                  <strong>{region.name}</strong>
+                <Tooltip>
+                  <strong>
+                    {layer === 'soil'
+                      ? type.label
+                      : labels[zoneState(zone)]}
+                  </strong>
                   <br />
-
-                  {region.sensors} estacas ·{' '}
-                  {labels[state] || labels.unknown}
+                  Zona ilustrativa · clique para ver estacas
                 </Tooltip>
-
-                <CircleMarker
-                  center={[region.lat, region.lon]}
-                  radius={5}
-                  pathOptions={{
-                    color: '#fff',
-                    fillColor: color,
-                    fillOpacity: 1,
-                    weight: 2
-                  }}
-                  eventHandlers={eventHandlers}
-                />
-              </Circle>
+              </Polygon>
             );
           })}
+
+          {regions.map(region => (
+            <CircleMarker
+              key={region.id}
+              center={[region.lat, region.lon]}
+              radius={region.id === cluster.id ? 9 : 6}
+              pathOptions={{
+                color: '#fff',
+                weight: 3,
+                fillColor:
+                  riskColors[decisions[region.id] || risk(region.rate)],
+                fillOpacity: 1
+              }}
+              eventHandlers={{
+                click: () => {
+                  setSelectedZoneId(null);
+                  setFocusSelection(true);
+                  onSelectRegion?.(region.id);
+                }
+              }}
+            >
+              <Tooltip
+                permanent
+                direction="top"
+                className="neighborhood-marker"
+              >
+                <strong>{region.name}</strong>
+                <br />
+                {region.sensor} · referência simulada
+              </Tooltip>
+            </CircleMarker>
+          ))}
+
+          {selectedZone && layer !== 'official'
+            && linkedSensors.map(region => (
+              <Polyline
+                key={`link-${region.id}`}
+                positions={[
+                  [region.lat, region.lon],
+                  selectedZone.positions[1]
+                ]}
+                interactive={false}
+                pathOptions={{
+                  color: '#173f36',
+                  weight: 1.5,
+                  dashArray: '3 7',
+                  opacity: 0.6
+                }}
+              />
+            ))}
 
           {visibleShelters.map(shelter => (
             <CircleMarker
               key={shelter.id}
               center={[shelter.lat, shelter.lon]}
-              radius={shelter.id === selectedShelterId ? 13 : 9}
+              radius={shelter.id === selectedShelterId ? 12 : 8}
               pathOptions={{
                 color: '#fff',
-                fillColor: '#366ab5',
+                fillColor: '#32699a',
                 fillOpacity: 1,
                 weight: 3
               }}
-              eventHandlers={onSelectShelter
-                ? { click: () => onSelectShelter(shelter.id) }
-                : {}}
+              eventHandlers={{
+                click: () => onSelectShelter?.(shelter.id)
+              }}
             >
-              <Tooltip direction="top">
-                <strong>{shelter.name}</strong>
+              <Tooltip>
+                {shelter.name}
                 <br />
-                Ponto fictício · {shelter.capacity} vagas no cenário
+                {shelter.capacity} vagas simuladas
               </Tooltip>
             </CircleMarker>
           ))}
@@ -210,9 +422,8 @@ export function RegionMap({
               radius={7}
               pathOptions={{
                 color: '#fff',
-                fillColor: '#275eae',
-                fillOpacity: 1,
-                weight: 3
+                fillColor: '#32699a',
+                fillOpacity: 1
               }}
             >
               <Tooltip>Sua localização</Tooltip>
@@ -221,20 +432,69 @@ export function RegionMap({
         </MapContainer>
 
         <div className="map-caption">
-          Zonas e estacas ilustrativas · limites sem validade geotécnica
+          {layer === 'official'
+            ? 'Carta oficial GeoSampa · estacas e coberturas do protótipo são fictícias'
+            : 'Recorte Norte / Noroeste · solos e contornos ilustrativos, sem validade geotécnica'}
         </div>
       </div>
 
-      <div className="map-bottom">
-        <div className="legend">
-          <span><i className="green-dot" />Estável</span>
-          <span><i className="amber-dot" />Atenção</span>
-          <span><i className="red-dot" />Crítico / alerta</span>
+      {layer === 'official' && officialError && (
+        <p className="soil-note" role="status">
+          Não foi possível carregar parte da carta GeoSampa.
+          Você pode voltar a Tipos de solo para explorar o cenário ilustrativo.
+        </p>
+      )}
 
-          {showShelters && (
+      <div className="map-bottom">
+        <div className="soil-legend">
+          {layer === 'soil'
+            ? Object.entries(SOIL_TYPES).map(([id, type]) => (
+                <span key={id}>
+                  <i
+                    className="soil-swatch"
+                    style={{ background: type.color }}
+                  />
+                  {type.label}
+                </span>
+              ))
+            : layer === 'risk' ? (
+                <>
+                  <span>
+                    <i
+                      className="soil-swatch"
+                      style={{ background: riskColors.stable }}
+                    />
+                    Estável
+                  </span>
+                  <span>
+                    <i
+                      className="soil-swatch"
+                      style={{ background: riskColors.attention }}
+                    />
+                    Atenção
+                  </span>
+                  <span>
+                    <i
+                      className="soil-swatch"
+                      style={{ background: riskColors.critical }}
+                    />
+                    Crítico
+                  </span>
+                </>
+              ) : (
+                <a
+                  href={`${WMS_URL}?service=WMS&version=1.1.1&request=GetLegendGraphic&format=image/png&layer=carta_geotecnica`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Consultar legenda oficial ↗
+                </a>
+              )}
+
+          {layer !== 'official' && (
             <span>
-              <i style={{ background: '#366ab5' }} />
-              Abrigo fictício
+              <i className="dashed-key" />
+              Cobertura ilustrativa selecionada
             </span>
           )}
         </div>
@@ -247,11 +507,90 @@ export function RegionMap({
             disabled={gps.loading}
           >
             <LocateFixed size={16} />
-
             {gps.loading ? 'Localizando…' : 'Minha localização'}
           </button>
         )}
       </div>
+
+      {layer === 'official' ? (
+        <div className="soil-note">
+          Camada externa da Carta Geotécnica 2024, não um mapa validado
+          de argila/areia. Pode ficar indisponível se o serviço GeoSampa
+          não responder. As outras camadas funcionam com dados locais
+          do protótipo.
+        </div>
+      ) : selectedZone && (
+        <div className="soil-detail">
+          <div className="soil-detail-grid">
+            <div>
+              <span className="eyebrow">ZONA CONTÍNUA · EXEMPLO</span>
+
+              <h3>
+                <i
+                  className="soil-swatch"
+                  style={{ background: soil.color }}
+                />
+                {soil.label}
+              </h3>
+
+              <p>{soil.description}</p>
+            </div>
+
+            <div>
+              <span className="eyebrow">
+                REFERÊNCIAS DE BAIRRO NO CENÁRIO
+              </span>
+
+              <p>
+                {coveredNeighborhoods.map(region => region.name).join(' · ')
+                  || 'Área de cobertura no recorte'}
+              </p>
+
+              <div className="soil-sensor-list">
+                {linkedSensors.map(region => (
+                  <button
+                    type="button"
+                    key={region.id}
+                    className={`sensor-pin ${
+                      cluster.id === region.id ? 'selected' : ''
+                    }`}
+                    aria-pressed={cluster.id === region.id}
+                    onClick={() => {
+                      onSelectRegion?.(region.id);
+                      setFocusSelection(true);
+                    }}
+                  >
+                    <Radio size={14} />
+                    {region.sensor} · {region.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <p className="coverage-note">
+            O tracejado mostra um vínculo de monitoramento inventado
+            para demonstrar uma zona atravessando bairros. Mesmo solo
+            e proximidade, sozinhos, não comprovam alcance de uma estaca
+            nem capacidade de previsão; isso exige calibração e
+            avaliação geotécnica.
+          </p>
+        </div>
+      )}
+
+      {layer === 'risk' && (
+        <p className="soil-note">
+          A cor da zona segue o maior nível simulado entre as estacas
+          vinculadas. Não representa previsão espacial do risco.
+        </p>
+      )}
+
+      {showShelters && (
+        <p className="soil-note">
+          Pontos azuis: abrigos fictícios do exercício.
+          As cores dos solos não representam nível de risco.
+        </p>
+      )}
 
       {allowLocation && gps.error && (
         <p className="error panel-padding" role="status">
@@ -315,9 +654,7 @@ export function ShelterRoute({
             {shelter.accessibility}
           </span>
 
-          <span className="text-button">
-            Destacar ponto no mapa
-          </span>
+          <span className="text-button">Destacar ponto no mapa</span>
         </button>
       ))}
 

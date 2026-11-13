@@ -1,11 +1,13 @@
-// Áreas, estacas e leituras fictícias para a demonstração acadêmica.
-// Via Serra é uma empresa ferroviária fictícia.
+// Recorte de bairros/distritos das zonas Norte e Noroeste de São Paulo.
+// Centros aproximados; solos, estacas e leituras são ilustrativos.
+// Os pontos não representam limites administrativos oficiais.
 
 export const clusters = [
   {
     id: 'brasilandia',
     name: 'Brasilândia',
     area: 'Zona Norte · São Paulo',
+    city: 'São Paulo',
     lat: -23.448,
     lon: -46.69,
     rate: 0.045,
@@ -18,11 +20,11 @@ export const clusters = [
     companyId: null,
     railKm: null
   },
-
   {
     id: 'jaragua',
     name: 'Jaraguá',
     area: 'Zona Noroeste · São Paulo',
+    city: 'São Paulo',
     lat: -23.456,
     lon: -46.735,
     rate: 0.018,
@@ -35,13 +37,13 @@ export const clusters = [
     companyId: 'via-serra',
     railKm: '18–24'
   },
-
   {
-    id: 'mboi',
-    name: 'M’Boi Mirim',
-    area: 'Zona Sul · São Paulo',
-    lat: -23.681,
-    lon: -46.773,
+    id: 'cachoeirinha',
+    name: 'Vila Nova Cachoeirinha',
+    area: 'Zona Norte · São Paulo',
+    city: 'São Paulo',
+    lat: -23.460,
+    lon: -46.664,
     rate: 0.105,
     humidity: 91,
     families: 164,
@@ -52,51 +54,51 @@ export const clusters = [
     companyId: null,
     railKm: null
   },
-
   {
     id: 'perus',
     name: 'Perus',
     area: 'Zona Noroeste · São Paulo',
+    city: 'São Paulo',
     lat: -23.405,
     lon: -46.752,
     rate: 0.067,
     humidity: 83,
     families: 72,
-    soil: 'Solo residual argiloso',
+    soil: 'Solo residual siltoso',
     sensor: 'EST-004',
     sensors: 10,
     precipitation: 71,
     companyId: 'via-serra',
     railKm: '25–31'
   },
-
   {
-    id: 'franco',
-    name: 'Franco da Rocha',
-    area: 'Região Metropolitana · SP',
-    lat: -23.329,
-    lon: -46.727,
+    id: 'pirituba',
+    name: 'Pirituba',
+    area: 'Zona Noroeste · São Paulo',
+    city: 'São Paulo',
+    lat: -23.483,
+    lon: -46.726,
     rate: 0.112,
     humidity: 94,
     families: 118,
-    soil: 'Solo residual siltoso',
+    soil: 'Solo residual arenoso',
     sensor: 'EST-005',
     sensors: 14,
     precipitation: 93,
     companyId: 'via-serra',
     railKm: '32–39'
   },
-
   {
-    id: 'itaquera',
-    name: 'Itaquera',
-    area: 'Zona Leste · São Paulo',
-    lat: -23.539,
-    lon: -46.454,
+    id: 'freguesia',
+    name: 'Freguesia do Ó',
+    area: 'Zona Norte · São Paulo',
+    city: 'São Paulo',
+    lat: -23.492,
+    lon: -46.697,
     rate: 0.023,
     humidity: 59,
     families: 84,
-    soil: 'Solo residual arenoso',
+    soil: 'Solo residual argiloso',
     sensor: 'EST-006',
     sensors: 9,
     precipitation: 31,
@@ -105,7 +107,6 @@ export const clusters = [
   }
 ];
 
-// Checklist pessoal: disponível somente para o cidadão.
 export const checklist = [
   'Separe documentos em um saco plástico',
   'Deixe remédios e itens essenciais à mão',

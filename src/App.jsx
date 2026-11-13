@@ -1,8 +1,9 @@
 import { useState } from 'react';
+
 import {
-  Activity,
   CloudRain,
-  Droplets,
+  House,
+  ShieldCheck,
   Radio,
   MapPin,
   TriangleAlert,
@@ -18,6 +19,7 @@ import {
   Badge
 } from './components/UI';
 
+import { CitizenMap } from './components/CitizenMap';
 import { StatusBanner } from './components/StatusBanner';
 import { Checklist } from './components/Checklist';
 import { RegionMap, ShelterRoute } from './components/RegionMap';
@@ -40,7 +42,9 @@ const SESSION_KEY = 'sentinela-demo-account';
 
 function readSession() {
   try {
-    return getDemoAccount(sessionStorage.getItem(SESSION_KEY)) || null;
+    return getDemoAccount(
+      sessionStorage.getItem(SESSION_KEY)
+    ) || null;
   } catch {
     return null;
   }
@@ -55,7 +59,7 @@ export default function App() {
     try {
       sessionStorage.setItem(SESSION_KEY, next.id);
     } catch {
-      // Manter sessão em memória quando o armazenamento estiver bloqueado.
+      // Manter a sessão em memória.
     }
 
     setAccount(next);
@@ -67,7 +71,7 @@ export default function App() {
       sessionStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem('sentinela-admin-key');
     } catch {
-      // A sessão em memória também é removida abaixo.
+      // A sessão em memória é removida abaixo.
     }
 
     setAccount(null);
@@ -110,13 +114,16 @@ function Workspace({ account, onLogout }) {
   const [page, setPage] = useState('overview');
 
   const regions = account.role === 'company'
-    ? clusters.filter(region => region.companyId === account.companyId)
+    ? clusters.filter(
+        region => region.companyId === account.companyId
+      )
     : clusters;
 
   const [clusterId, setClusterId] = useState(regions[0].id);
 
-  const cluster = regions.find(region => region.id === clusterId)
-    || regions[0];
+  const cluster = regions.find(
+    region => region.id === clusterId
+  ) || regions[0];
 
   const [storedDecisions, setDecisions] = useStoredState(
     'sentinela-decisions',
@@ -146,34 +153,48 @@ function Workspace({ account, onLogout }) {
     ? 'evacuation'
     : decisions[cluster.id] || risk(cluster.rate);
 
-  const red = citizen && ['critical', 'evacuation'].includes(state);
+  const red = citizen
+    && ['critical', 'evacuation'].includes(state);
 
   const mapDecisions = citizen && citizenAlerts[cluster.id]
-    ? { ...decisions, [cluster.id]: 'evacuation' }
+    ? {
+        ...decisions,
+        [cluster.id]: 'evacuation'
+      }
     : decisions;
 
-  const shelters = red ? getNearbyShelters(cluster) : [];
+  const shelters = red
+    ? getNearbyShelters(cluster)
+    : [];
 
   function chooseRegion(id) {
     if (!regions.some(region => region.id === id)) return;
+
     setClusterId(id);
     setSelectedShelterId(null);
   }
 
   const heading = page === 'reports'
-    ? civil ? 'Triagem de relatos' : 'Relatos da comunidade'
+    ? civil
+      ? 'Triagem de relatos'
+      : 'Relatos da comunidade'
     : page === 'guide'
       ? 'Sua preparação começa aqui'
       : page === 'map'
-        ? citizen ? 'Mapa da sua região' : 'Mapa de monitoramento'
+        ? citizen
+          ? 'Mapa da sua região'
+          : 'Mapa de monitoramento'
         : civil
           ? 'Dashboard da Defesa Civil'
           : citizen
             ? 'Sua comunidade, mais protegida'
             : 'Dashboard Via Serra';
 
+  const MapView = citizen ? CitizenMap : RegionMap;
+
   const mapProps = {
     cluster,
+    state,
     regions,
     decisions: mapDecisions,
     showShelters: red,
@@ -235,7 +256,9 @@ function Workspace({ account, onLogout }) {
 
             <Badge tone="blue">
               <Radio size={13} />
-              Estacas simuladas
+              {citizen
+                ? 'Exemplo para explorar'
+                : 'Estacas simuladas'}
             </Badge>
           </div>
 
@@ -275,6 +298,7 @@ function Workspace({ account, onLogout }) {
 
                   <span>
                     <strong>Explore o alerta vermelho</strong>
+
                     <small>
                       Uma simulação para conhecer a indicação de abrigos.
                     </small>
@@ -282,7 +306,9 @@ function Workspace({ account, onLogout }) {
                 </div>
 
                 <Button
-                  variant={citizenAlerts[cluster.id] ? 'secondary' : 'danger'}
+                  variant={citizenAlerts[cluster.id]
+                    ? 'secondary'
+                    : 'danger'}
                   onClick={() => {
                     setCitizenAlerts(previous => ({
                       ...previous,
@@ -315,8 +341,9 @@ function Workspace({ account, onLogout }) {
               {citizenAlerts[cluster.id] === false
                 && ['critical', 'evacuation'].includes(state) && (
                   <p className="inline-note">
-                    Seu teste terminou. O cenário da região continua crítico
-                    na demonstração; por isso, os abrigos permanecem visíveis.
+                    Seu teste terminou. O cenário da região continua
+                    crítico na demonstração; por isso, os abrigos
+                    permanecem visíveis.
                   </p>
                 )}
             </>
@@ -325,12 +352,20 @@ function Workspace({ account, onLogout }) {
           {page === 'overview' && (
             citizen ? (
               <>
-                <CitizenMetrics cluster={cluster} />
+                <CitizenMetrics
+                  cluster={cluster}
+                  state={state}
+                  sheltersCount={shelters.length}
+                />
 
-                <div className={`citizen-grid ${red ? 'with-shelters' : ''}`}>
-                  <RegionMap
+                <div
+                  className={`citizen-grid ${
+                    red ? 'with-shelters' : ''
+                  }`}
+                >
+                  <MapView
                     {...mapProps}
-                    title="Sua região e as estacas"
+                    title="Seu bairro"
                   />
 
                   {red ? (
@@ -342,15 +377,17 @@ function Workspace({ account, onLogout }) {
                     />
                   ) : (
                     <section className="card preparation-card">
-                      <p className="eyebrow">PREVENÇÃO NO DIA A DIA</p>
+                      <p className="eyebrow">
+                        PREVENÇÃO NO DIA A DIA
+                      </p>
 
                       <h2>
                         Um plano para quem você quer proteger.
                       </h2>
 
                       <p>
-                        Organize documentos, itens essenciais e um ponto
-                        de encontro para sua família.
+                        Organize documentos, itens essenciais e um
+                        ponto de encontro para sua família.
                       </p>
 
                       <Button
@@ -372,7 +409,6 @@ function Workspace({ account, onLogout }) {
               </>
             ) : civil ? (
               <CivilPanel
-                key={cluster.id}
                 cluster={cluster}
                 decision={decisions[cluster.id]}
                 decisions={decisions}
@@ -397,7 +433,7 @@ function Workspace({ account, onLogout }) {
 
           {page === 'map' && (
             <>
-              <RegionMap
+              <MapView
                 {...mapProps}
                 title={citizen
                   ? 'Mapa da região'
@@ -446,10 +482,10 @@ function Workspace({ account, onLogout }) {
           )}
 
           <p className="academic-note">
-            Protótipo acadêmico. Leituras, áreas de risco, gráficos e abrigos
-            são ilustrativos. As simulações deste navegador não emitem
-            alertas reais. Mapas: OpenStreetMap; clima, quando disponível:
-            Open-Meteo.
+            Protótipo acadêmico. Leituras, áreas de risco, gráficos
+            e abrigos são ilustrativos. As simulações deste navegador
+            não emitem alertas reais. Mapas: OpenStreetMap; clima,
+            quando disponível: Open-Meteo.
           </p>
 
           <Footer />
@@ -459,52 +495,58 @@ function Workspace({ account, onLogout }) {
   );
 }
 
-function CitizenMetrics({ cluster }) {
+function CitizenMetrics({ cluster, state, sheltersCount }) {
   const { weather, error } = useWeather(cluster);
+
+  const rainAvailable =
+    weather && Number.isFinite(weather.precipitation);
+
+  const red = ['critical', 'evacuation'].includes(state);
 
   return (
     <div className="metrics-grid">
       <MetricCard
         icon={CloudRain}
-        title="Precipitação atual"
-        value={weather && Number.isFinite(weather.precipitation)
-          ? weather.precipitation.toLocaleString('pt-BR')
-          : '—'}
-        unit="mm"
-        foot={error || 'Open-Meteo · dado meteorológico atual'}
+        title="Chuva agora"
+        value={rainAvailable
+          ? weather.precipitation > 0
+            ? 'Chovendo'
+            : 'Sem chuva'
+          : 'Sem informação'}
+        foot={error || 'Clima atual · Open-Meteo'}
       />
 
       <MetricCard
-        icon={Activity}
-        title="Movimento do solo"
-        value={cluster.rate.toLocaleString('pt-BR', {
-          maximumFractionDigits: 3
-        })}
-        unit="°/h"
-        foot="Leitura simulada da estaca de referência"
+        icon={ShieldCheck}
+        title="Aviso do exercício"
+        value={red
+          ? 'Alerta de teste'
+          : state === 'returned'
+            ? 'Retorno simulado'
+            : state === 'unknown'
+              ? 'Sem informação'
+              : 'Acompanhe'}
+        foot="Consulte sempre os avisos oficiais"
       />
 
       <MetricCard
-        icon={Droplets}
-        title="Umidade do solo"
-        value={cluster.humidity}
-        unit="%"
-        foot="Indicador demonstrativo"
-      />
-
-      <MetricCard
-        icon={Radio}
-        title="Estacas na região"
-        value={cluster.sensors}
-        unit="estacas"
-        foot={`Referência: ${cluster.sensor} · simulação`}
+        icon={House}
+        title="Abrigos de exemplo"
+        value={red ? sheltersCount : 'No alerta'}
+        unit={red ? 'exemplos' : ''}
+        foot="Pontos fictícios para conhecer a demonstração"
       />
     </div>
   );
 }
 
-function ReportsWorkspace({ cluster, civil = false, compact = false }) {
+function ReportsWorkspace({
+  cluster,
+  civil = false,
+  compact = false
+}) {
   const api = useReports();
+
   const [form, setForm] = useState(false);
   const [adminDraft, setAdminDraft] = useState('');
 
@@ -515,8 +557,9 @@ function ReportsWorkspace({ cluster, civil = false, compact = false }) {
           <h2>Acesso à triagem de relatos</h2>
 
           <p className="muted">
-            O login demonstrativo não concede acesso administrativo à API.
-            Informe a chave configurada no servidor para editar a triagem.
+            O login demonstrativo não concede acesso administrativo
+            à API. Informe a chave configurada no servidor para editar
+            a triagem.
           </p>
 
           {api.adminKey ? (
@@ -556,7 +599,9 @@ function ReportsWorkspace({ cluster, civil = false, compact = false }) {
                 onChange={event => setAdminDraft(event.target.value)}
               />
 
-              <Button type="submit">Habilitar triagem</Button>
+              <Button type="submit">
+                Habilitar triagem
+              </Button>
             </form>
           )}
         </section>

@@ -1,0 +1,764 @@
+/* Escopo exclusivo da página pública interativa. */
+
+.landing.landing-interactive {
+  --forest: #173f36;
+  --clay: #bc6042;
+  --paper: #f7f3e9;
+  --lime: #dce879;
+}
+
+.landing.landing-interactive .public-header {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.landing.landing-interactive .hero {
+  padding: 35px 48px 42px;
+  gap: 35px;
+  grid-template-columns: .9fr 1.1fr;
+  align-items: center;
+}
+
+.landing.landing-interactive .hero h1 {
+  font-size: clamp(67px, 7vw, 96px);
+  margin: 20px 0 15px;
+}
+
+.landing.landing-interactive .hero-copy > h2 {
+  margin-bottom: 13px;
+}
+
+.landing.landing-interactive .hero-copy > p:not(.hero-note) {
+  max-width: 440px;
+}
+
+.landing.landing-interactive .hero-actions {
+  gap: 17px;
+  margin: 21px 0;
+}
+
+.landing.landing-interactive .hero-field-note {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  max-width: 420px;
+  border-top: 1px dashed #c3c8ac;
+  padding-top: 16px;
+  margin-bottom: 17px;
+}
+
+.landing.landing-interactive .hero-field-note > span {
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 1px;
+  color: #a15c3f;
+  max-width: 90px;
+  line-height: 1.8;
+}
+
+.landing.landing-interactive .hero-field-note p {
+  font-size: 11px;
+  color: #798268;
+  line-height: 1.7;
+}
+
+.landing.landing-interactive .hero-field-note strong {
+  font-weight: 550;
+  color: #486147;
+}
+
+.landing.landing-interactive .interactive-scene {
+  position: relative;
+  min-width: 0;
+  padding-top: 12px;
+}
+
+.landing.landing-interactive .soil-drawing {
+  padding: 18px 20px 14px;
+  border-radius: 75px 9px 20px 9px;
+  transform: rotate(.5deg);
+}
+
+.landing.landing-interactive .soil-drawing > svg {
+  max-height: 375px;
+}
+
+.landing.landing-interactive .drawing-caption {
+  padding: 10px 12px;
+}
+
+.landing.landing-interactive .scene-sticker {
+  position: absolute;
+  right: 5px;
+  top: 0;
+  z-index: 2;
+  padding: 11px 15px;
+  background: #dce879;
+  border: 1px solid #a2ad60;
+  color: #45613c;
+  font-size: 10px;
+  line-height: 1.6;
+  transform: rotate(7deg);
+  box-shadow: 2px 3px 0 #173f3612;
+}
+
+.landing.landing-interactive .scene-sticker em {
+  font-family: Georgia, serif;
+  font-size: 13px;
+}
+
+.landing.landing-interactive g.scene-rain,
+.landing.landing-interactive g.scene-alert {
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.landing.landing-interactive figure.scene-rain g.scene-rain {
+  opacity: 1;
+}
+
+.landing.landing-interactive figure.scene-alert g.scene-alert {
+  opacity: 1;
+}
+
+.landing.landing-interactive figure.scene-rain {
+  background: #dce7df;
+}
+
+.landing.landing-interactive figure.scene-alert {
+  background: #eed8c5;
+}
+
+.landing.landing-interactive .scenario-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 0 6px;
+}
+
+.landing.landing-interactive .scenario-controls button {
+  flex: 1;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 9px;
+  background: #fffaf0;
+  border: 1px solid #cfd6b9;
+  border-radius: 5px;
+  color: #61744d;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.landing.landing-interactive .scenario-controls button[aria-pressed=true] {
+  background: #173f36;
+  color: #f2f1d8;
+  border-color: #173f36;
+}
+
+.landing.landing-interactive .scenario-controls button:hover {
+  box-shadow: inset 0 0 0 1px #789351;
+}
+
+.landing.landing-interactive .scene-status {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #53694b;
+  text-align: center;
+  min-height: 20px;
+}
+
+.landing.landing-interactive .field-strip {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.landing.landing-interactive .public-section {
+  padding: 48px;
+}
+
+.landing.landing-interactive .public-section h2 {
+  font-size: clamp(30px, 3.2vw, 43px);
+}
+
+.landing.landing-interactive .landing-story {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 65px;
+  align-items: start;
+}
+
+.landing.landing-interactive .landing-story > div > p:not(.section-kicker) {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #748168;
+  max-width: 480px;
+  margin-top: 18px;
+}
+
+.landing.landing-interactive .story-path {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px dashed #b0be94;
+}
+
+.landing.landing-interactive .story-path li {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 0 0 15px -17px;
+  padding: 9px 0;
+  color: #5d7847;
+}
+
+.landing.landing-interactive .story-path li > svg {
+  box-sizing: content-box;
+  padding: 8px;
+  background: #e5ebcf;
+  border-radius: 50%;
+}
+
+.landing.landing-interactive .story-path strong {
+  display: block;
+  font-family: Georgia, serif;
+  font-size: 23px;
+  font-weight: 450;
+  color: #315b3e;
+  margin-bottom: 5px;
+}
+
+.landing.landing-interactive .story-path span {
+  font-size: 11px;
+  color: #7d896e;
+}
+
+.landing.landing-interactive .story-footnote {
+  grid-column: 1 / -1;
+  border-top: 1px solid #dcdfc9;
+  padding-top: 15px;
+  color: #8a917b;
+  font-size: 10px;
+}
+
+.landing.landing-interactive .neighborhood-lab {
+  max-width: 1284px;
+  background: #e9e8d6;
+  border-radius: 6px 50px 6px 6px;
+  padding: 35px;
+}
+
+.landing.landing-interactive .lab-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.landing.landing-interactive .lab-heading > p {
+  color: #7b8569;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.landing.landing-interactive .neighborhood-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 25px 0 20px;
+}
+
+.landing.landing-interactive .neighborhood-chips button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid #c6cdb0;
+  padding: 8px 11px;
+  border-radius: 20px;
+  background: transparent;
+  color: #647b4c;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.landing.landing-interactive .neighborhood-chips button[aria-pressed=true] {
+  background: #dce879;
+  color: #36542e;
+  border-color: #94a257;
+}
+
+.landing.landing-interactive .neighborhood-preview {
+  display: grid;
+  grid-template-columns: .85fr 1.15fr;
+  gap: 25px;
+  background: #fffaf0;
+  border: 1px solid #d6d9be;
+  border-radius: 4px 4px 30px 4px;
+  overflow: hidden;
+}
+
+.landing.landing-interactive .neighborhood-postcard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding: 38px 28px 25px;
+  background: #dce8be;
+  border-right: 1px solid #cdd6b6;
+}
+
+.landing.landing-interactive .postcard-stamp {
+  align-self: flex-start;
+  border: 1px dashed #7e9560;
+  padding: 6px 9px;
+  color: #718a51;
+  font-size: 7px;
+  letter-spacing: 1px;
+  transform: rotate(-3deg);
+  line-height: 1.7;
+}
+
+.landing.landing-interactive .postcard-houses {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 5px 0 12px;
+  color: #446b48;
+  height: 80px;
+  border-bottom: 3px solid #718956;
+}
+
+.landing.landing-interactive .postcard-houses span {
+  font-family: Georgia, serif;
+  font-size: 80px;
+  line-height: .9;
+}
+
+.landing.landing-interactive .postcard-houses span:nth-child(2) {
+  font-size: 110px;
+  color: #b96c45;
+}
+
+.landing.landing-interactive .neighborhood-postcard > strong {
+  font-family: Georgia, serif;
+  color: #284b35;
+  font-size: 28px;
+  font-weight: 450;
+  line-height: 1.2;
+}
+
+.landing.landing-interactive .neighborhood-postcard > small {
+  color: #83946c;
+  font-size: 10px;
+  margin-top: 8px;
+}
+
+.landing.landing-interactive .postcard-caption {
+  margin-top: 20px;
+  color: #6f8558;
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+}
+
+.landing.landing-interactive .neighborhood-message {
+  padding: 25px 25px 25px 0;
+  min-width: 0;
+}
+
+.landing.landing-interactive .demo-pill {
+  display: inline-flex;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  padding: 5px 8px;
+  border: 1px solid #d5dcc3;
+  color: #789158;
+  border-radius: 3px;
+}
+
+.landing.landing-interactive .neighborhood-message h3 {
+  font-family: Georgia, serif;
+  font-size: 25px;
+  font-weight: 450;
+  line-height: 1.25;
+  margin: 15px 0 11px;
+  color: #365b3c;
+}
+
+.landing.landing-interactive .neighborhood-message > p {
+  font-size: 12px;
+  color: #78866b;
+  line-height: 1.8;
+}
+
+.landing.landing-interactive .neighborhood-message > .public-link {
+  margin-top: 15px;
+}
+
+.landing.landing-interactive .neighborhood-message > small {
+  display: block;
+  font-size: 9px;
+  line-height: 1.7;
+  color: #969784;
+  margin-top: 17px;
+}
+
+.landing.landing-interactive .preview-rain .neighborhood-postcard {
+  background: #d6e3da;
+}
+
+.landing.landing-interactive .preview-alert .neighborhood-postcard {
+  background: #efcfb4;
+}
+
+.landing.landing-interactive .preview-alert .demo-pill {
+  color: #ad573e;
+  background: #f8e5d5;
+  border-color: #e6bda4;
+}
+
+.landing.landing-interactive .role-lab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 55px;
+  padding-top: 55px;
+  padding-bottom: 45px;
+  align-items: start;
+}
+
+.landing.landing-interactive .role-lab > div > p:not(.section-kicker) {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #7a866e;
+  margin-top: 18px;
+  max-width: 450px;
+}
+
+.landing.landing-interactive .role-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.landing.landing-interactive .role-selector button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid #d5dcc2;
+  border-radius: 4px 14px 4px 4px;
+  color: #70845b;
+  padding: 12px 15px;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: left;
+}
+
+.landing.landing-interactive .role-selector button > svg:last-child {
+  margin-left: auto;
+}
+
+.landing.landing-interactive .role-selector button[aria-pressed=true] {
+  background: #173f36;
+  border-color: #173f36;
+  color: #eaf0c0;
+}
+
+.landing.landing-interactive .role-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #dce879;
+  padding: 30px;
+  border-radius: 45px 6px 6px 6px;
+  min-width: 0;
+  min-height: 370px;
+}
+
+.landing.landing-interactive .role-preview > svg {
+  color: #4c6b3e;
+  margin-bottom: 20px;
+}
+
+.landing.landing-interactive .role-preview h3 {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  line-height: 1.15;
+  color: #2f5539;
+  font-weight: 450;
+  margin-bottom: 13px;
+}
+
+.landing.landing-interactive .role-preview > p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #75804b;
+}
+
+.landing.landing-interactive .role-preview ul {
+  list-style: none;
+  padding: 17px 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing.landing-interactive .role-preview li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5b7444;
+  font-size: 11px;
+}
+
+.landing.landing-interactive .role-preview .public-button {
+  margin-top: auto;
+}
+
+.landing.landing-interactive .role-preview-civil {
+  background: #dce6cf;
+}
+
+.landing.landing-interactive .role-preview-company {
+  background: #ecd2bb;
+}
+
+.landing.landing-interactive .landing-faq {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 65px;
+  padding-top: 35px;
+  border-top: 1px solid #dcdfc9;
+}
+
+.landing.landing-interactive .landing-faq > div > p:not(.section-kicker) {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #859076;
+  max-width: 280px;
+}
+
+.landing.landing-interactive .faq-note {
+  display: inline-block;
+  color: #bc6c47;
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.4;
+  margin-top: 25px;
+  transform: rotate(-3deg);
+}
+
+.landing.landing-interactive .landing-faq details {
+  border-bottom: 1px solid #d6dcc3;
+  padding: 0 0 15px;
+  margin-bottom: 17px;
+}
+
+.landing.landing-interactive .landing-faq summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: #526c44;
+  font-weight: 650;
+  line-height: 1.6;
+}
+
+.landing.landing-interactive .landing-faq details p {
+  font-size: 12px;
+  color: #7f8b71;
+  line-height: 1.8;
+  padding-top: 13px;
+}
+
+.landing.landing-interactive .public-footer {
+  background: #173f36;
+  color: #c3d1b3;
+  max-width: none;
+  padding: 23px max(35px, calc((100vw - 1284px) / 2));
+}
+
+.landing.landing-interactive .public-footer .public-link {
+  color: #dce879;
+  font-size: 10px;
+}
+
+@media (max-width: 1050px) {
+  .landing.landing-interactive .hero,
+  .landing.landing-interactive .public-section {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .landing.landing-interactive .hero {
+    gap: 25px;
+  }
+
+  .landing.landing-interactive .hero h1 {
+    font-size: 74px;
+  }
+
+  .landing.landing-interactive .neighborhood-lab {
+    margin: 0 22px;
+  }
+
+  .landing.landing-interactive .role-lab,
+  .landing.landing-interactive .landing-story,
+  .landing.landing-interactive .landing-faq {
+    gap: 35px;
+  }
+}
+
+@media (max-width: 720px) {
+  .landing.landing-interactive .hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 27px 20px 30px;
+    gap: 25px;
+  }
+
+  .landing.landing-interactive .hero h1 {
+    font-size: 76px;
+  }
+
+  .landing.landing-interactive .hero-field-note {
+    max-width: none;
+  }
+
+  .landing.landing-interactive .soil-drawing {
+    border-radius: 45px 6px 15px 6px;
+    padding: 16px 10px 12px;
+  }
+
+  .landing.landing-interactive .scene-sticker {
+    padding: 8px 11px;
+    font-size: 8px;
+  }
+
+  .landing.landing-interactive .scene-sticker em {
+    font-size: 11px;
+  }
+
+  .landing.landing-interactive .scenario-controls button {
+    gap: 4px;
+    padding: 10px 5px;
+    font-size: 9px;
+  }
+
+  .landing.landing-interactive .scenario-controls button svg {
+    width: 15px;
+  }
+
+  .landing.landing-interactive .public-section {
+    padding: 32px 20px;
+  }
+
+  .landing.landing-interactive .public-section h2 {
+    font-size: 34px;
+  }
+
+  .landing.landing-interactive .landing-story,
+  .landing.landing-interactive .role-lab,
+  .landing.landing-interactive .landing-faq {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 25px;
+  }
+
+  .landing.landing-interactive .story-path {
+    margin-left: 17px;
+  }
+
+  .landing.landing-interactive .story-footnote {
+    grid-column: auto;
+  }
+
+  .landing.landing-interactive .neighborhood-lab {
+    margin: 0 13px;
+    padding: 28px 17px;
+    border-radius: 6px 35px 6px 6px;
+  }
+
+  .landing.landing-interactive .lab-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .landing.landing-interactive .neighborhood-chips {
+    gap: 6px;
+    margin-top: 18px;
+  }
+
+  .landing.landing-interactive .neighborhood-chips button {
+    font-size: 9px;
+    padding: 8px 9px;
+  }
+
+  .landing.landing-interactive .neighborhood-preview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .landing.landing-interactive .neighborhood-postcard {
+    padding: 19px;
+    border-right: 0;
+    border-bottom: 1px solid #cdd6b6;
+  }
+
+  .landing.landing-interactive .postcard-houses {
+    height: 65px;
+    margin: 0 0 10px;
+  }
+
+  .landing.landing-interactive .postcard-houses span {
+    font-size: 65px;
+  }
+
+  .landing.landing-interactive .postcard-houses span:nth-child(2) {
+    font-size: 90px;
+  }
+
+  .landing.landing-interactive .postcard-caption {
+    margin-top: 10px;
+  }
+
+  .landing.landing-interactive .neighborhood-message {
+    padding: 20px;
+  }
+
+  .landing.landing-interactive .role-preview {
+    padding: 25px;
+    min-height: 0;
+  }
+
+  .landing.landing-interactive .role-preview h3 {
+    font-size: 29px;
+  }
+
+  .landing.landing-interactive .landing-faq {
+    padding-top: 30px;
+  }
+
+  .landing.landing-interactive .faq-note {
+    margin-top: 16px;
+  }
+
+  .landing.landing-interactive .public-footer {
+    padding: 23px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing.landing-interactive *,
+  .landing.landing-interactive *::before,
+  .landing.landing-interactive *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
