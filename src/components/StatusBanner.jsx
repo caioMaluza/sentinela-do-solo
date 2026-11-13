@@ -1,63 +1,56 @@
 import {
   ShieldCheck,
+  TriangleAlert,
   ArrowRight
 } from 'lucide-react';
 
 import { Button, Badge } from './UI';
 import { labels } from '../lib/risk';
 
-export function StatusBanner({
-  state,
-  cluster,
-  onPrepare
-}) {
+export function StatusBanner({ state, cluster, onPrepare }) {
+  const red = state === 'critical' || state === 'evacuation';
+  const green = state === 'stable' || state === 'returned';
+  const Icon = red ? TriangleAlert : ShieldCheck;
+
   return (
-    <section className={'status-banner ' + state}>
+    <section
+      className={`status-banner ${state}`}
+      aria-live="polite"
+    >
       <div className="status-art">
-        <ShieldCheck
-          size={60}
-          strokeWidth={1.2}
-        />
+        <Icon size={38} strokeWidth={1.5} />
       </div>
 
       <div className="status-copy">
-        <Badge tone={state === 'stable' ? 'green' : 'amber'}>
-          <span className="dot" />
-          {labels[state]}
+        <Badge tone={red ? 'red' : green ? 'green' : 'amber'}>
+          {red
+            ? 'ALERTA VERMELHO · SIMULAÇÃO'
+            : labels[state]}
         </Badge>
 
         <h2>
-          {state === 'stable'
-            ? 'Cenário com leitura estável.'
-            : state === 'evacuation'
-              ? 'Simulação: siga para um local seguro.'
-              : state === 'returned'
-                ? 'Vistoria concluída na simulação.'
-                : 'Vamos nos preparar, com calma.'}
+          {red
+            ? 'Exercício de alerta na sua região.'
+            : state === 'returned'
+              ? 'Retorno autorizado no exercício.'
+              : green
+                ? 'Acompanhe sua região com tranquilidade.'
+                : 'Atenção começa com informação.'}
         </h2>
 
         <p>
-          {state === 'stable'
-            ? 'Esta é uma leitura simulada, não uma avaliação da segurança real da encosta.'
-            : state === 'evacuation'
-              ? 'Evacuação simulada; nenhuma ordem real foi emitida. Não utilize o mapa para sair de casa.'
-              : state === 'returned'
-                ? 'Este retorno foi autorizado somente na simulação, sem vistoria real.'
-                : 'O cenário ilustrativo indica atenção. Para situações reais, acompanhe avisos oficiais.'}
+          {red
+            ? `O cenário de ${cluster.name} foi marcado como crítico. Os abrigos abaixo são fictícios e servem apenas para conhecer a experiência do projeto.`
+            : state === 'returned'
+              ? 'A Defesa Civil concluiu a vistoria e liberou o retorno apenas nesta simulação.'
+              : 'As leituras das estacas são simuladas. Acompanhe os avisos oficiais para decisões em situações reais.'}
         </p>
 
-        <Button
-          variant="light"
-          onClick={onPrepare}
-        >
-          Ver orientações
+        <Button variant="light" onClick={onPrepare}>
+          Ver minha preparação
           <ArrowRight size={16} />
         </Button>
       </div>
-
-      <span className="banner-region">
-        {cluster.name} · Dados simulados
-      </span>
     </section>
   );
 }

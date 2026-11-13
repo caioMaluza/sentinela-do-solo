@@ -1,404 +1,202 @@
-# 🌱 Sentinela do Solo
+# Sentinela do Solo
 
-**Site de referência:** https://sentinela-do-solo-one.vercel.app/
+Protótipo acadêmico de monitoramento de riscos geológicos para a
+Global Solution 2026.2 — FIAP.
 
-### Plataforma de Monitoramento de Riscos Geológicos e Proteção Comunitária
-
-Projeto desenvolvido como parte da **Global Solution 2026.2 — FIAP**, com foco em tecnologia, prevenção de desastres e segurança da população.
-
----
+A página pública apresenta o projeto. Os painéis separam cidadão,
+Defesa Civil e a empresa ferroviária fictícia Via Serra.
 
 ## Integrantes
 
-Anderson Marcolino - RM: 574066
-Caio Cesar - RM: 572906
-Felipe Luan - RM: 569565
-Pedro Alves - RM: 569192
-Rafaella Pazzanese - RM: 572296
+- Anderson Marcolino — RM 574066
+- Caio Cesar — RM 572906
+- Felipe Luan — RM 569565
+- Pedro Alves — RM 569192
+- Rafaella Pazzanese — RM 572296
 
----
+## Executar
 
-## 📌 Sobre o Projeto
-
-O **Sentinela do Solo** é uma aplicação web desenvolvida para auxiliar no monitoramento de áreas suscetíveis a riscos geológicos, especialmente regiões que podem apresentar movimentações do solo e deslizamentos.
-
-A plataforma busca facilitar o acesso a informações sobre riscos ambientais, permitindo que cidadãos, empresas e órgãos de Defesa Civil acompanhem indicadores, consultem regiões monitoradas e participem de ações preventivas.
-
-O sistema reúne informações geográficas, condições meteorológicas, classificações de risco e relatos comunitários em uma interface acessível.
-
-O objetivo é contribuir para a prevenção de desastres, a conscientização da população e o apoio à tomada de decisões.
-
-> **Importante:** O projeto é um protótipo acadêmico. As classificações de risco e decisões operacionais apresentadas na aplicação possuem caráter demonstrativo e não substituem avaliações técnicas ou alertas oficiais da Defesa Civil.
-
----
-
-## 🎯 Objetivos
-
-- Democratizar o acesso a informações sobre riscos geológicos.
-- Facilitar a identificação de áreas potencialmente vulneráveis.
-- Incentivar a participação da comunidade na prevenção de desastres.
-- Disponibilizar informações meteorológicas e geográficas.
-- Simular procedimentos de prevenção e resposta a emergências.
-- Apoiar a conscientização sobre segurança ambiental.
-
----
-
-## ⚙️ Funcionalidades
-
-### 🗺️ Monitoramento Geográfico
-
-- Visualização de regiões monitoradas em mapa interativo.
-- Consulta de indicadores de movimentação do solo.
-- Identificação de diferentes níveis de risco.
-- Informações geográficas das regiões cadastradas.
-
-### 🚨 Classificação de Riscos
-
-O sistema utiliza uma função para classificar leituras de movimentação do solo em três categorias:
-
-| Classificação | Condição |
-|---|---|
-| 🟢 Estável | Taxa inferior a 40% do limite crítico |
-| 🟡 Atenção | Taxa entre 40% e menos de 100% do limite crítico |
-| 🔴 Crítico | Taxa igual ou superior ao limite crítico |
-| ⚪ Indisponível | Leitura inválida ou não disponível |
-
-O limite crítico padrão utilizado no código é de `0.1`, e a classificação é calculada automaticamente.
-
-Esses limites são parâmetros demonstrativos do projeto, não critérios oficiais para determinar segurança geológica.
-
-### 🌧️ Informações Meteorológicas
-
-Integração com a API Open-Meteo para consultar:
-
-- Temperatura atual.
-- Precipitação.
-- Condições meteorológicas da região selecionada.
-
-### 📝 Relatos Comunitários
-
-- Cadastro de relatos.
-- Consulta dos registros existentes.
-- Atualização de informações.
-- Exclusão de relatos.
-- Comunicação de situações observadas pela comunidade.
-
-### 🛡️ Painel da Defesa Civil
-
-Ambiente demonstrativo para:
-
-- Consultar regiões monitoradas.
-- Simular evacuações preventivas.
-- Verificar condições de estabilidade.
-- Simular autorização de retorno após vistoria.
-
-As ações realizadas nesse painel não emitem alertas públicos reais.
-
-### 🏢 Painel Empresarial
-
-Interface destinada à visualização de informações e ações relacionadas à prevenção de riscos em ambientes empresariais.
-
-### 📋 Orientações Preventivas
-
-Disponibilização de informações e orientações para auxiliar cidadãos na preparação diante de situações de risco.
-
----
-
-## 💻 Tecnologias Utilizadas
-
-| Tecnologia | Utilização |
-|---|---|
-| React 19 | Construção da interface |
-| JavaScript | Lógica da aplicação |
-| Vite 6 | Ambiente de desenvolvimento e build |
-| HTML5 | Estrutura da aplicação |
-| CSS3 | Estilização |
-| Tailwind CSS 4 | Recursos de estilização |
-| Leaflet | Mapas interativos |
-| React Leaflet | Integração dos mapas com React |
-| Lucide React | Ícones |
-| Open-Meteo API | Dados meteorológicos |
-| Node.js | Execução das ferramentas e testes |
-| Git e GitHub | Versionamento do código |
-
-O projeto também contém uma API para gerenciamento de relatos, com suporte a armazenamento por meio de um bucket configurado no ambiente de execução.
-
----
-
-## 📋 Pré-requisitos
-
-Antes de executar o projeto, é necessário ter instalado:
-
-- **Node.js:** versão 20 ou superior, preferencialmente uma versão LTS recente.
-- **npm:** gerenciador de pacotes distribuído com o Node.js.
-- **Git:** para clonar o repositório.
-- **Visual Studio Code:** recomendado para edição do código.
-- **Navegador atualizado:** Chrome, Edge ou Firefox.
-- **Conexão com a internet:** necessária para consultar serviços externos, como a API meteorológica e os mapas.
-
-### Verificar as instalações
-
-Abra o terminal e execute:
-
-```bash
-node -v
-```
-
-```bash
-npm -v
-```
-
-```bash
-git --version
-```
-
-Se os comandos retornarem suas respectivas versões, as ferramentas estão disponíveis.
-
----
-
-## 🚀 Instalação
-
-### 1. Obter o projeto
-
-Clone o repositório pelo terminal:
-
-```bash
-git clone https://github.com/caioMaluza/sentinela-do-solo.git
-```
-
-Ou baixe o projeto em formato ZIP pelo GitHub e extraia os arquivos.
-
-### 2. Acessar a pasta
-
-```bash
-cd sentinela-do-solo
-```
-
-### 3. Instalar as dependências
+Requisitos: Node.js 20.19+ ou 22.12+ e npm.
 
 ```bash
 npm install
-```
-
-Esse comando instalará as bibliotecas necessárias para executar a aplicação.
-
----
-
-## ▶️ Como Executar
-
-### 1. Iniciar o servidor de desenvolvimento
-
-Dentro da pasta principal do projeto, execute:
-
-```bash
 npm run dev
 ```
 
-### 2. Acessar a aplicação
+Abra o endereço informado pelo Vite, normalmente http://localhost:5173.
 
-O terminal exibirá o endereço local disponibilizado pelo Vite.
-
-Normalmente:
-
-```text
-http://localhost:5173
-```
-
-Abra esse endereço no navegador para visualizar a aplicação.
-
-### 3. Encerrar o servidor
-
-Para interromper a execução, pressione:
-
-```text
-Ctrl + C
-```
-
-no terminal.
-
----
-
-## 🔌 Configuração da API
-
-O frontend utiliza o caminho `/api` como endereço padrão para as requisições.
-
-Também é possível configurar um endereço externo por meio da variável de ambiente:
-
-```env
-VITE_API_URL=https://seu-servidor.com/api
-```
-
-Essa variável pode ser definida em um arquivo `.env` na raiz do projeto.
-
-### Endpoints disponíveis
-
-| Método | Endpoint | Descrição |
-|---|---|---|
-| GET | `/api/relatos` | Listar relatos |
-| POST | `/api/relatos` | Criar relato |
-| PUT | `/api/relatos/:id` | Atualizar relato |
-| DELETE | `/api/relatos/:id` | Excluir relato |
-
-O backend está implementado em `worker/api.js`.
-
-Para utilizar a persistência de dados, é necessário configurar o ambiente de execução com um bucket de armazenamento acessível pela variável `BUCKET`.
-
-**Atenção:** executar apenas `npm run dev` inicia o frontend Vite, mas não configura automaticamente o backend de relatos. Para utilizar todas as operações da API, é necessário disponibilizar o backend e configurar sua conexão.
-
----
-
-## 🧪 Testes Automatizados
-
-O projeto possui testes automatizados utilizando o módulo nativo de testes do Node.js.
-
-Para executar:
+O plugin existente em scripts/local-api.js atende /api/relatos
+no desenvolvimento e grava em .local-data.
+Não é necessário iniciar outro servidor.
 
 ```bash
 npm test
-```
-
-Os testes incluem verificações relacionadas a:
-
-- Classificação dos níveis de risco.
-- Limites entre os estados de estabilidade, atenção e criticidade.
-- Tratamento de leituras inválidas.
-- Condições necessárias para o retorno simulado.
-- Cálculo de distâncias geográficas.
-- Comportamento da API.
-
----
-
-## 📦 Build de Produção
-
-Para gerar uma versão otimizada da aplicação, execute:
-
-```bash
 npm run build
 ```
 
-O comando realiza o build com Vite e executa o script responsável pela preparação do worker.
+O build gera o frontend em dist/.
+As Functions existentes em api/ atendem os relatos na Vercel.
 
-Os arquivos gerados ficam na pasta:
+## Logins demonstrativos
 
-```text
-dist/
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Cidadão | cidadao@sentinela.demo | Sentinela@2026 |
+| Defesa Civil | defesa@sentinela.demo | Sentinela@2026 |
+| Empresa Via Serra | empresa@sentinela.demo | Sentinela@2026 |
+
+Os cartões de perfil preenchem os dados.
+Clique em entrar para acessar.
+
+Use sair no menu lateral para trocar de perfil.
+A conta permanece na aba durante recarregamentos e é removida ao sair.
+
+São acessos de apresentação implementados no frontend,
+sem autenticação ou autorização reais.
+Um produto real precisa autenticar e filtrar dados no servidor.
+
+## Perfis
+
+### Cidadão
+
+- Consulta de região e clima atual quando disponível.
+- Relatos comunitários.
+- Checklist familiar.
+- Simulação de alerta vermelho com abrigos fictícios.
+
+### Defesa Civil
+
+- Seis áreas e 69 estacas ilustrativas.
+- Mapa integrado, gráficos, alertas e tabela de áreas.
+- Simulação de evacuação e retorno após vistoria.
+- Triagem dos relatos com chave administrativa do servidor.
+
+### Empresa
+
+- Somente os trechos da Via Serra:
+  Jaraguá, Perus e Franco da Rocha.
+- 32 estacas demonstrativas.
+- Consulta de riscos nos próprios ativos.
+- Simulação de paralisação e retomada da circulação.
+
+Checklist familiar e abrigos pertencem ao cidadão.
+A empresa não emite evacuações públicas nem acessa a triagem.
+
+## Demonstrar o alerta
+
+1. Entre como cidadão e selecione Brasilândia.
+2. Clique em "Simular alerta vermelho".
+3. O aviso fica vermelho e aparecem três abrigos fictícios.
+4. Selecione um abrigo para destacá-lo no mapa.
+5. Clique em "Encerrar meu teste" para restaurar o cenário anterior.
+
+As distâncias são em linha reta desde o centro da região.
+Vagas e acessibilidade são simuladas.
+
+M’Boi Mirim já começa crítico.
+Se a região continua crítica ou tem uma evacuação da Defesa Civil
+ativa, os abrigos permanecem após encerrar o teste pessoal.
+
+Para integrar perfis:
+
+1. Entre como Defesa Civil.
+2. Selecione uma área.
+3. Confirme as duas etapas do alerta vermelho.
+4. Saia e entre como cidadão no mesmo navegador.
+5. Selecione a mesma área.
+
+O retorno exige evacuação anterior, leitura zero simulada
+e vistoria técnica marcada.
+
+## Persistência
+
+Checklist, decisões civis e paralisações empresariais
+ficam no localStorage.
+
+O teste pessoal do cidadão dura enquanto seu painel estiver aberto.
+
+Não há sincronização entre dispositivos nem envio de avisos reais.
+
+Para reiniciar o cenário, execute no console do navegador:
+
+```js
+localStorage.removeItem('sentinela-checklist');
+localStorage.removeItem('sentinela-decisions');
+localStorage.removeItem('sentinela-company-stops-via-serra');
+location.reload();
 ```
 
-O script também prepara um arquivo de servidor em:
+## Relatos e Vercel
 
-```text
-dist/server/index.js
-```
+A API aceita as regiões de src/data/clusters.js.
 
-A publicação em produção exige a configuração de uma plataforma compatível com o worker e com o armazenamento utilizado pela API.
+Editar ou excluir relatos continua exigindo a chave administrativa
+do servidor. O login da Defesa Civil não substitui essa validação.
 
----
+Localmente, o plugin usa ADMIN_API_KEY do processo ou a chave
+demonstrativa demo-local-2026.
 
-## 📁 Estrutura do Projeto
+Informe a chave em "Triagem de relatos".
+A API valida o valor na primeira alteração.
 
-```text
-sentinela-do-solo/
-│
-├── index.html
-├── package.json
-├── package-lock.json
-├── vite.config.js
-│
-├── src/
-│   ├── App.jsx
-│   ├── main.jsx
-│   ├── styles.css
-│   │
-│   ├── components/
-│   │   ├── UI.jsx
-│   │   ├── Checklist.jsx
-│   │   ├── RegionMap.jsx
-│   │   ├── Reports.jsx
-│   │   └── StatusBanner.jsx
-│   │
-│   ├── pages/
-│   │   └── Operations.jsx
-│   │
-│   ├── hooks/
-│   │   ├── useLocation.js
-│   │   ├── useReports.js
-│   │   ├── useStoredState.js
-│   │   └── useWeather.js
-│   │
-│   ├── services/
-│   │   └── api.js
-│   │
-│   ├── data/
-│   │   └── clusters.js
-│   │
-│   └── lib/
-│       └── risk.js
-│
-├── worker/
-│   └── api.js
-│
-├── scripts/
-│   └── build-worker.mjs
-│
-└── tests/
-    ├── api.test.js
-    └── risk.test.js
-```
+Na Vercel:
 
-### Principais diretórios
+- Mantenha as Functions em api/.
+- Conecte um Vercel Blob privado.
+- Configure ADMIN_API_KEY no servidor com valor próprio de
+  pelo menos 12 caracteres.
+- O token de Blob vem da integração da plataforma.
+- Nunca coloque segredos em variáveis VITE_*.
+- Faça novo deploy após alterar código ou variáveis.
 
-- **src/components:** componentes reutilizáveis da interface.
-- **src/pages:** páginas e painéis operacionais.
-- **src/hooks:** gerenciamento de estados e integrações.
-- **src/services:** comunicação com a API.
-- **src/data:** informações das regiões monitoradas.
-- **src/lib:** regras de negócio e cálculos.
-- **worker:** implementação do backend.
-- **scripts:** automação do processo de build.
-- **tests:** testes automatizados.
+VITE_API_URL é opcional para uma API em outro endereço.
+O padrão é /api.
+Uma API externa precisa permitir CORS.
 
----
+Use somente relatos fictícios e fotos que não identifiquem pessoas.
 
-## 🌍 Impacto Social
+## Tecnologias
 
-O Sentinela do Solo busca contribuir para uma sociedade mais preparada diante de riscos ambientais.
+React 19, Vite 6, Leaflet, React Leaflet, Lucide React,
+CSS e Tailwind 4.
 
-A proposta está relacionada à prevenção de desastres, à proteção da população e ao uso de tecnologias digitais para facilitar o acesso à informação.
+Esta atualização não exige novas dependências da aplicação.
 
-O projeto também incentiva a participação comunitária e a utilização de dados como ferramentas de apoio à prevenção.
+## Organização
 
-### Objetivos de Desenvolvimento Sustentável
+- src/App.jsx: sessão e separação dos perfis.
+- src/pages/Landing.jsx: apresentação pública.
+- src/pages/Login.jsx: acesso demonstrativo.
+- src/pages/PublicPages.css: estilos das páginas públicas.
+- src/pages/Operations.jsx: dashboards operacionais.
+- src/components/UI.jsx: navegação e componentes compartilhados.
+- src/components/StatusBanner.jsx: avisos do cidadão.
+- src/components/RegionMap.jsx: mapa e lista de abrigos.
+- src/data/clusters.js: regiões e vínculo empresarial.
+- src/data/shelters.js: abrigos fictícios e distâncias.
+- src/lib/demoAuth.js: contas demonstrativas.
+- src/styles.css: padrão visual dos painéis.
+- worker/api.js: API compartilhada pelo Vite e Vercel.
 
-**ODS 11 — Cidades e Comunidades Sustentáveis**
+Os demais arquivos do projeto continuam necessários.
 
-Contribuir para comunidades mais seguras, resilientes e preparadas para situações de risco.
+## Limitações
 
-**ODS 13 — Ação Contra a Mudança Global do Clima**
+Zonas, estacas, gráficos, famílias, abrigos e decisões são ilustrativos.
 
-Incentivar a adaptação, a conscientização e a preparação diante de eventos ambientais extremos.
+Os círculos do mapa não são limites geotécnicos.
+A Via Serra é fictícia.
 
----
+Os abrigos não representam locais existentes ou avaliados como seguros.
+As distâncias não são rotas.
 
-## ⚠️ Limitações do Projeto
+Nenhuma simulação substitui alertas oficiais.
 
-O Sentinela do Solo é um protótipo acadêmico e não constitui um sistema oficial de monitoramento geológico.
+O mapa base depende do OpenStreetMap.
+O clima do cidadão consulta Open-Meteo.
+Os gráficos operacionais são sempre fictícios.
 
-As leituras e os indicadores demonstrativos não devem ser utilizados isoladamente para determinar a necessidade de evacuação ou a segurança de uma região.
+Sem conexão, o mapa base ou o clima podem ficar indisponíveis.
 
-Decisões reais de emergência devem ser tomadas pelas autoridades competentes, com base em avaliações técnicas e informações oficiais.
-
----
-
-## 👨‍💻 Desenvolvimento
-
-Projeto acadêmico desenvolvido para a **Global Solution 2026.2 da FIAP**, no curso de Engenharia de Software.
-
-**Repositório:** [Sentinela do Solo](https://github.com/caioMaluza/sentinela-do-solo)
-
----
-
-## 📄 Licença
-
-Projeto desenvolvido para fins acadêmicos e educacionais.
-
-A disponibilização pública do código não implica automaticamente autorização para redistribuição ou uso comercial. As condições de uso devem ser definidas em um arquivo de licença específico.
+Repositório de referência:
+https://github.com/caioMaluza/sentinela-do-solo

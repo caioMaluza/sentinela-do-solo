@@ -1,27 +1,29 @@
 import { useEffect, useRef } from 'react';
+
 import {
   X,
-  ShieldCheck,
   Mountain,
   LayoutDashboard,
   MessagesSquare,
   Map,
   BookOpen,
-  Leaf
+  LogOut,
+  ShieldCheck,
+  TrainFront,
+  UserRound
 } from 'lucide-react';
-
-// ==================================================
-// BOTÃO
-// ==================================================
 
 export function Button({
   children,
   variant = '',
+  className = '',
+  type = 'button',
   ...props
 }) {
   return (
     <button
-      className={'button ' + variant}
+      type={type}
+      className={`button ${variant} ${className}`}
       {...props}
     >
       {children}
@@ -29,64 +31,82 @@ export function Button({
   );
 }
 
-// ==================================================
-// BADGE
-// ==================================================
-
-export function Badge({
-  children,
-  tone = 'green'
-}) {
-  return (
-    <span className={'badge ' + tone}>
-      {children}
-    </span>
-  );
+export function Badge({ children, tone = 'green' }) {
+  return <span className={`badge ${tone}`}>{children}</span>;
 }
 
-// ==================================================
-// MODAL
-// ==================================================
-
-export function Modal({
-  title,
-  children,
-  onClose
-}) {
+export function Modal({ title, children, onClose }) {
   const closeRef = useRef(onClose);
-  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     const previous = document.activeElement;
-    const closeOnEscape = event => {
-      if (event.key === 'Escape') closeRef.current();
-    };
-    window.addEventListener('keydown', closeOnEscape);
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+
+    dialogRef.current
+      ?.querySelector('button, input, select, textarea, a[href]')
+      ?.focus();
+
+    function handleKey(event) {
+      if (event.key === 'Escape') {
+        closeRef.current();
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const items = [
+        ...(dialogRef.current?.querySelectorAll(
+          'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]'
+        ) || [])
+      ];
+
+      const first = items[0];
+      const last = items.at(-1);
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    }
+
+    window.addEventListener('keydown', handleKey);
+
     return () => {
-      window.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = previousOverflow;
       previous?.focus?.();
     };
   }, []);
+
   return (
-    <div
-      className="modal-backdrop"
-      onClick={onClose}
-    >
+    <div className="modal-backdrop" onClick={onClose}>
       <section
+        ref={dialogRef}
         className="modal"
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        onClick={e => e.stopPropagation()}
+        onClick={event => event.stopPropagation()}
       >
         <div className="section-heading">
           <h2>{title}</h2>
 
           <button
+            type="button"
             className="icon-btn"
             aria-label="Fechar"
             onClick={onClose}
           >
-            <X />
+            <X size={22} />
           </button>
         </div>
 
@@ -96,21 +116,44 @@ export function Modal({
   );
 }
 
-// ==================================================
-// MENU LATERAL
-// ==================================================
-
 export function Sidebar({
   page,
   setPage,
-  profile,
-  setProfile
+  account,
+  onLogout
 }) {
+  const citizen = account.role === 'citizen';
+  const civil = account.role === 'civil';
+
+  const Icon = citizen
+    ? UserRound
+    : civil
+      ? ShieldCheck
+      : TrainFront;
+
   const nav = [
-    ['overview', LayoutDashboard, 'Visão geral'],
-    ['reports', MessagesSquare, 'Relatos da comunidade'],
-    ['map', Map, 'Mapa da região'],
-    ['guide', BookOpen, 'Como se preparar']
+    [
+      'overview',
+      LayoutDashboard,
+      citizen ? 'Minha comunidade' : 'Dashboard'
+    ],
+    [
+      'map',
+      Map,
+      citizen ? 'Mapa da região' : 'Mapa de monitoramento'
+    ],
+
+    ...(account.role !== 'company'
+      ? [[
+          'reports',
+          MessagesSquare,
+          civil ? 'Triagem de relatos' : 'Relatos da comunidade'
+        ]]
+      : []),
+
+    ...(citizen
+      ? [['guide', BookOpen, 'Como se preparar']]
+      : [])
   ];
 
   return (
@@ -119,102 +162,90 @@ export function Sidebar({
         type="button"
         className="brand"
         onClick={() => setPage('overview')}
+        aria-label="Sentinela do Solo, início do painel"
       >
         <span className="brand-icon">
-          <Mountain size={27} />
+          <Mountain size={25} />
         </span>
 
         <span>
           sentinela
-          <span className="brand-sub">
-            DO SOLO
-          </span>
+          <span className="brand-sub">DO SOLO</span>
         </span>
       </button>
 
       <div className="workspace-label">
-        ESPAÇO DA COMUNIDADE
+        {citizen
+          ? 'ESPAÇO DO CIDADÃO'
+          : civil
+            ? 'CENTRAL DE OPERAÇÕES'
+            : 'MONITORAMENTO FERROVIÁRIO'}
       </div>
 
-      <label className="profile-select">
-        Seu perfil na demonstração
+      <div className="profile-card">
+        <Icon size={21} />
 
-        <select
-          value={profile}
-          onChange={e => {
-            setProfile(e.target.value);
-            setPage('overview');
-          }}
-        >
-          <option>Cidadão</option>
-          <option>Defesa Civil</option>
-          <option>Empresa</option>
-        </select>
-      </label>
+        <div>
+          <strong>{account.label}</strong>
 
-      <nav>
-        {nav.map(([key, Icon, label]) => (
+          <small>
+            {civil
+              ? 'Visão de todas as regiões'
+              : citizen
+                ? 'Informação e preparação'
+                : 'Via Serra · empresa fictícia'}
+          </small>
+        </div>
+      </div>
+
+      <nav aria-label="Navegação do painel">
+        {nav.map(([id, NavIcon, label]) => (
           <button
             type="button"
-            key={key}
-            className={
-              page === key
-                ? 'nav-item active'
-                : 'nav-item'
-            }
-            onClick={() => setPage(key)}
+            key={id}
+            className={`nav-item ${page === id ? 'active' : ''}`}
+            aria-current={page === id ? 'page' : undefined}
+            onClick={() => setPage(id)}
           >
-            <Icon size={19} />
+            <NavIcon size={18} />
             {label}
-
-            {page === key && (
-              <span className="active-dot" />
-            )}
           </button>
         ))}
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="free-card">
-          <Leaf size={24} />
-
-          <strong>
-            Cuidar é um esforço coletivo.
-          </strong>
+        <div className="demo-card">
+          <span className="dot" />
+          <strong>Ambiente demonstrativo</strong>
 
           <p>
-            Proteção para a comunidade.
-            Sempre gratuita para você.
+            Estacas, indicadores e ações operacionais são simulados.
           </p>
-
-          <Badge>
-            COMPROMISSO ESG
-          </Badge>
         </div>
 
         <div className="user">
           <span className="avatar">
-            C
+            <Icon size={18} />
           </span>
 
           <div>
-            <strong>
-              Comunidade Sentinela
-            </strong>
-
-            <small>
-              Projeto CitizenTech · FIAP
-            </small>
+            <strong>{account.name}</strong>
+            <small>Conta de demonstração</small>
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="nav-item logout-button"
+        onClick={onLogout}
+      >
+        <LogOut size={18} />
+        Sair e voltar ao site
+      </button>
     </aside>
   );
 }
-
-// ==================================================
-// CARTÃO DE MÉTRICAS
-// ==================================================
 
 export function MetricCard({
   icon: Icon,
@@ -225,7 +256,7 @@ export function MetricCard({
   tone = ''
 }) {
   return (
-    <div className="metric card">
+    <div className={`metric card ${tone}`}>
       <div className="metric-label">
         <span>{title}</span>
         <Icon size={19} />
@@ -236,31 +267,16 @@ export function MetricCard({
         <span>{unit}</span>
       </div>
 
-      <small className={tone}>
-        {foot}
-      </small>
+      {foot && <small>{foot}</small>}
     </div>
   );
 }
 
-// ==================================================
-// TÍTULO DE SEÇÃO
-// ==================================================
-
-export function SectionTitle({
-  eyebrow,
-  title,
-  children
-}) {
+export function SectionTitle({ eyebrow, title, children }) {
   return (
     <div className="section-heading">
       <div>
-        {eyebrow && (
-          <p className="eyebrow">
-            {eyebrow}
-          </p>
-        )}
-
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
         <h2>{title}</h2>
       </div>
 
@@ -269,39 +285,25 @@ export function SectionTitle({
   );
 }
 
-// ==================================================
-// ESTADO VAZIO
-// ==================================================
-
 export function EmptyState({ children }) {
   return (
     <div className="empty">
-      <MessagesSquare />
-
-      <h3>
-        Nenhum relato por aqui
-      </h3>
-
+      <MessagesSquare size={26} />
+      <h3>Nenhum relato por aqui</h3>
       <p>{children}</p>
     </div>
   );
 }
-
-// ==================================================
-// RODAPÉ
-// ==================================================
 
 export function Footer() {
   return (
     <footer>
       <span>
         <ShieldCheck size={15} />
-        Tecnologia a serviço da vida.
+        Sentinela do Solo · Projeto acadêmico FIAP
       </span>
 
-      <span>
-        Sentinela do Solo © 2026 · ODS 11 & 13
-      </span>
+      <span>Dados demonstrativos · ODS 11 e 13</span>
     </footer>
   );
 }

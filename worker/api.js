@@ -1,9 +1,10 @@
 // API compartilhada entre o Vite local e as Functions da Vercel.
 // Os indicadores são fictícios; esta API NÃO substitui a Defesa Civil.
+import { clusters } from '../src/data/clusters.js';
 
 const TYPES = ['Rachadura', 'Mina d’água', 'Inclinação de árvore', 'Movimentação de terra', 'Outro'];
 const STATUSES = ['Recebido', 'Em Vistoria', 'Confirmado', 'Descartado'];
-const REGIONS = ['brasilandia', 'jaragua', 'mboi'];
+const REGIONS = new Set(clusters.map(region => region.id));
 const BODY_LIMIT = 2_200_000;
 const PHOTO_PATTERN = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
 const PATH_PATTERN = /^\/api\/relatos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))?\/?$/i;
@@ -23,7 +24,7 @@ function validate(record) {
   if (!record || typeof record !== 'object' || Array.isArray(record)) return false;
   return (
     TYPES.includes(record.type) &&
-    REGIONS.includes(record.clusterId) &&
+    REGIONS.has(record.clusterId) &&
     STATUSES.includes(record.status) &&
     typeof record.description === 'string' &&
     record.description.trim().length >= 10 &&

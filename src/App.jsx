@@ -1,16 +1,13 @@
 import { useState } from 'react';
-
 import {
-  MapPin,
-  Plus,
-  CloudRain,
   Activity,
+  CloudRain,
   Droplets,
   Radio,
-  ArrowRight,
-  Leaf,
-  ShieldCheck,
-  Check
+  MapPin,
+  TriangleAlert,
+  RotateCcw,
+  ArrowRight
 } from 'lucide-react';
 
 import {
@@ -27,488 +24,561 @@ import { RegionMap, ShelterRoute } from './components/RegionMap';
 import { ReportForm, ReportList } from './components/Reports';
 import { CivilPanel, CompanyPanel } from './pages/Operations';
 
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+
+import { getDemoAccount } from './lib/demoAuth';
 import { clusters } from './data/clusters';
+import { getNearbyShelters } from './data/shelters';
 import { risk } from './lib/risk';
 
 import { useReports } from './hooks/useReports';
 import { useWeather } from './hooks/useWeather';
 import { useStoredState } from './hooks/useStoredState';
 
-// ==================================================
-// COMPONENTE PRINCIPAL
-// ==================================================
+const SESSION_KEY = 'sentinela-demo-account';
+
+function readSession() {
+  try {
+    return getDemoAccount(sessionStorage.getItem(SESSION_KEY)) || null;
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
-  // ==================================================
-  // ESTADOS DA APLICAÇÃO
-  // ==================================================
+  const [account, setAccount] = useState(readSession);
+  const [view, setView] = useState('landing');
+  const [initialRole, setInitialRole] = useState('citizen');
 
+  function login(next) {
+    try {
+      sessionStorage.setItem(SESSION_KEY, next.id);
+    } catch {
+      // Manter sessão em memória quando o armazenamento estiver bloqueado.
+    }
+
+    setAccount(next);
+    window.scrollTo(0, 0);
+  }
+
+  function logout() {
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem('sentinela-admin-key');
+    } catch {
+      // A sessão em memória também é removida abaixo.
+    }
+
+    setAccount(null);
+    setView('landing');
+    window.scrollTo(0, 0);
+  }
+
+  if (account) {
+    return (
+      <Workspace
+        key={account.id}
+        account={account}
+        onLogout={logout}
+      />
+    );
+  }
+
+  if (view === 'login') {
+    return (
+      <Login
+        initialRole={initialRole}
+        onLogin={login}
+        onBack={() => setView('landing')}
+      />
+    );
+  }
+
+  return (
+    <Landing
+      onLogin={role => {
+        setInitialRole(role || 'citizen');
+        setView('login');
+        window.scrollTo(0, 0);
+      }}
+    />
+  );
+}
+
+function Workspace({ account, onLogout }) {
   const [page, setPage] = useState('overview');
-  const [profile, setProfile] = useState('Cidadão');
-  const [clusterId, setClusterId] = useState('brasilandia');
-  const [form, setForm] = useState(false);
-  const [safe, setSafe] = useState(false);
-  const [adminDraft, setAdminDraft] = useState('');
 
-  const [decisions, setDecisions] = useStoredState(
+  const regions = account.role === 'company'
+    ? clusters.filter(region => region.companyId === account.companyId)
+    : clusters;
+
+  const [clusterId, setClusterId] = useState(regions[0].id);
+
+  const cluster = regions.find(region => region.id === clusterId)
+    || regions[0];
+
+  const [storedDecisions, setDecisions] = useStoredState(
     'sentinela-decisions',
     {}
   );
 
-  // ==================================================
-  // DADOS E HOOKS
-  // ==================================================
+  const decisions = (
+    storedDecisions
+    && typeof storedDecisions === 'object'
+    && !Array.isArray(storedDecisions)
+  )
+    ? Object.fromEntries(
+        Object.entries(storedDecisions).filter(([id, value]) =>
+          clusters.some(region => region.id === id)
+          && ['evacuation', 'returned'].includes(value)
+        )
+      )
+    : {};
 
-  const cluster = clusters.find(c => c.id === clusterId) || clusters[0];
+  const [citizenAlerts, setCitizenAlerts] = useState({});
+  const [selectedShelterId, setSelectedShelterId] = useState(null);
 
-  const state =
-    (decisions && typeof decisions === 'object' ? decisions[clusterId] : null) || risk(cluster.rate);
+  const citizen = account.role === 'citizen';
+  const civil = account.role === 'civil';
 
-  const api = useReports();
+  const state = citizen && citizenAlerts[cluster.id]
+    ? 'evacuation'
+    : decisions[cluster.id] || risk(cluster.rate);
 
-  const {
-    weather,
-    error: weatherError
-  } = useWeather(cluster);
+  const red = citizen && ['critical', 'evacuation'].includes(state);
 
-  // ==================================================
-  // TÍTULO DINÂMICO
-  // ==================================================
+  const mapDecisions = citizen && citizenAlerts[cluster.id]
+    ? { ...decisions, [cluster.id]: 'evacuation' }
+    : decisions;
 
-  const title =
-    page === 'reports'
-      ? 'Cada relato faz a diferença.'
+  const shelters = red ? getNearbyShelters(cluster) : [];
+
+  function chooseRegion(id) {
+    if (!regions.some(region => region.id === id)) return;
+    setClusterId(id);
+    setSelectedShelterId(null);
+  }
+
+  const heading = page === 'reports'
+    ? civil ? 'Triagem de relatos' : 'Relatos da comunidade'
+    : page === 'guide'
+      ? 'Sua preparação começa aqui'
       : page === 'map'
-        ? 'Conheça o seu território.'
-        : page === 'guide'
-          ? 'Preparar é uma forma de cuidar.'
-          : profile === 'Defesa Civil'
-            ? 'Informação para agir com cuidado.'
-            : profile === 'Empresa'
-              ? 'Proteção que vai além da operação.'
-              : 'Sua comunidade, mais protegida.';
+        ? citizen ? 'Mapa da sua região' : 'Mapa de monitoramento'
+        : civil
+          ? 'Dashboard da Defesa Civil'
+          : citizen
+            ? 'Sua comunidade, mais protegida'
+            : 'Dashboard Via Serra';
 
-  // ==================================================
-  // INTERFACE
-  // ==================================================
+  const mapProps = {
+    cluster,
+    regions,
+    decisions: mapDecisions,
+    showShelters: red,
+    shelters,
+    selectedShelterId,
+    onSelectShelter: setSelectedShelterId,
+    onSelectRegion: chooseRegion,
+    allowLocation: citizen
+  };
 
   return (
-    <div className="app">
-      {/* MENU LATERAL */}
+    <div className={`app role-${account.role}`}>
+      <a href="#main-content" className="skip-link">
+        Pular para o conteúdo
+      </a>
 
       <Sidebar
         page={page}
         setPage={setPage}
-        profile={profile}
-        setProfile={setProfile}
+        account={account}
+        onLogout={onLogout}
       />
 
       <div className="main-shell">
-        {/* CABEÇALHO */}
-
         <header className="topbar">
           <span>
-            Monitoramento de encostas
-
-            <span className="topbar-slash">
-              /
-            </span>
-
-            <strong>{profile}</strong>
+            Plataforma Sentinela
+            <span className="topbar-slash">/</span>
+            <strong>{account.label}</strong>
           </span>
 
           <span className="demo-label">
             <span className="dot" />
-            Ambiente de demonstração
+            Demonstração acadêmica
           </span>
         </header>
 
-        <main>
-          {/* TÍTULO DA PÁGINA */}
-
+        <main id="main-content" tabIndex={-1}>
           <div className="page-heading">
             <div>
               <p className="eyebrow">
-                CUIDADO QUE COMEÇA PERTO DE VOCÊ
+                {civil
+                  ? 'VISÃO INTEGRADA DO TERRITÓRIO'
+                  : citizen
+                    ? 'INFORMAÇÃO PERTO DE VOCÊ'
+                    : 'GESTÃO DOS ATIVOS DA SUA EMPRESA'}
               </p>
 
-              <h1>{title}</h1>
+              <h1>{heading}</h1>
 
               <p className="subtitle">
-                Informação clara, participação e mais
-                tranquilidade para o seu dia.
+                {civil
+                  ? 'Áreas monitoradas, estacas e decisões em uma única central.'
+                  : citizen
+                    ? 'Acompanhe o cenário, prepare sua família e participe.'
+                    : 'Trechos ferroviários e estacas da Via Serra, empresa fictícia.'}
               </p>
             </div>
 
-            <Button onClick={() => setForm(true)}>
-              <Plus size={18} />
-              Registrar relato
-            </Button>
+            <Badge tone="blue">
+              <Radio size={13} />
+              Estacas simuladas
+            </Badge>
           </div>
 
-          {/* SELEÇÃO DA REGIÃO */}
-
           <div className="region-bar">
-            <div>
-              <MapPin size={18} />
+            <div className="region-picker">
+              <MapPin size={17} />
 
               <label htmlFor="region">
-                Minha região
+                {citizen ? 'Minha região' : 'Área selecionada'}
               </label>
 
               <select
                 id="region"
-                value={clusterId}
-                onChange={e => {
-                  setClusterId(e.target.value);
-                  setSafe(false);
-                }}
+                value={cluster.id}
+                onChange={event => chooseRegion(event.target.value)}
               >
-                {clusters.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} · São Paulo
+                {regions.map(region => (
+                  <option key={region.id} value={region.id}>
+                    {region.name}
                   </option>
                 ))}
               </select>
             </div>
 
             <span>
-              <Radio size={14} />
-              Sensores em modo simulado
+              {citizen
+                ? cluster.area
+                : `${regions.length} áreas no seu painel · dados ilustrativos`}
             </span>
           </div>
 
-          {profile === 'Defesa Civil' && (
-            <section className="card admin-access">
-              <h2>Acesso de triagem · somente demonstração</h2>
-              <p className="muted">
-                Simulações de evacuação funcionam localmente. Para editar, excluir ou
-                mudar a triagem dos relatos compartilhados é necessária a chave do servidor.
-              </p>
-              {api.adminKey ? (
-                <div className="admin-access-row">
-                  <span>Chave inserida nesta sessão (validada na próxima alteração).</span>
-                  <Button variant="secondary" onClick={() => api.setAdminKey('')}>Sair da triagem</Button>
-                </div>
-              ) : (
-                <form className="admin-access-row" onSubmit={event => {
-                  event.preventDefault();
-                  api.setAdminKey(adminDraft);
-                  setAdminDraft('');
-                }}>
-                  <input type="password" autoComplete="off" aria-label="Chave de triagem"
-                    placeholder="Chave de triagem" minLength={12} required
-                    value={adminDraft} onChange={event => setAdminDraft(event.target.value)} />
-                  <Button type="submit">Habilitar triagem</Button>
-                </form>
-              )}
-            </section>
-          )}
-
-          {/* ===================================== */}
-          {/* PÁGINA: VISÃO GERAL                  */}
-          {/* ===================================== */}
-
-          {page === 'overview' ? (
+          {citizen && ['overview', 'map'].includes(page) && (
             <>
+              <div className="simulation-bar">
+                <div>
+                  <TriangleAlert size={18} />
+
+                  <span>
+                    <strong>Explore o alerta vermelho</strong>
+                    <small>
+                      Uma simulação para conhecer a indicação de abrigos.
+                    </small>
+                  </span>
+                </div>
+
+                <Button
+                  variant={citizenAlerts[cluster.id] ? 'secondary' : 'danger'}
+                  onClick={() => {
+                    setCitizenAlerts(previous => ({
+                      ...previous,
+                      [cluster.id]: !previous[cluster.id]
+                    }));
+
+                    setSelectedShelterId(null);
+                  }}
+                >
+                  {citizenAlerts[cluster.id] ? (
+                    <>
+                      <RotateCcw size={15} />
+                      Encerrar meu teste
+                    </>
+                  ) : (
+                    <>
+                      <TriangleAlert size={15} />
+                      Simular alerta vermelho
+                    </>
+                  )}
+                </Button>
+              </div>
+
               <StatusBanner
-                state={state}
                 cluster={cluster}
+                state={state}
                 onPrepare={() => setPage('guide')}
               />
 
-              {/* MÉTRICAS */}
-
-              <div className="metrics-grid">
-                <MetricCard
-                  icon={CloudRain}
-                  title="Precipitação recente"
-                  value={
-                    weather && Number.isFinite(weather.precipitation)
-                      ? weather.precipitation.toLocaleString('pt-BR')
-                      : '—'
-                  }
-                  unit="mm"
-                  foot={
-                    weatherError ||
-                    (
-                      weather
-                        ? 'Open-Meteo · ' +
-                          weather.time.replace('T', ' às ')
-                        : 'Consultando Open-Meteo…'
-                    )
-                  }
-                />
-
-                <MetricCard
-                  icon={Activity}
-                  title="Movimento do solo"
-                  value={
-                    cluster.rate
-                      .toFixed(3)
-                      .replace('.', ',')
-                  }
-                  unit="°/h"
-                  foot="Leitura simulada · margem de atenção 40%"
-                  tone="amber-text"
-                />
-
-                <MetricCard
-                  icon={Droplets}
-                  title="Umidade do solo"
-                  value={cluster.humidity}
-                  unit="%"
-                  foot="Leitura simulada da estaca"
-                />
-
-                <MetricCard
-                  icon={Radio}
-                  title="Estaca de referência"
-                  value={cluster.sensor}
-                  unit=""
-                  foot="Sensor demonstrativo · sem hardware conectado"
-                  tone="green-text"
-                />
-              </div>
-
-              {/* ALERTA DE CHUVA */}
-
-              {weather &&
-                weather.precipitation >= 5 &&
-                cluster.rate > 0 && (
-                  <p className="notice">
-                    Alerta sugerido para análise:
-                    chuva intensa e movimento do solo
-                    no cenário. A decisão depende da
-                    avaliação da Defesa Civil.
+              {citizenAlerts[cluster.id] === false
+                && ['critical', 'evacuation'].includes(state) && (
+                  <p className="inline-note">
+                    Seu teste terminou. O cenário da região continua crítico
+                    na demonstração; por isso, os abrigos permanecem visíveis.
                   </p>
                 )}
-
-              {/* PAINEL DA DEFESA CIVIL */}
-
-              {profile === 'Defesa Civil' && (
-                <CivilPanel
-                  key={cluster.id}
-                  cluster={cluster}
-                  decision={decisions[clusterId]}
-                  onDecision={value =>
-                    setDecisions(previous => ({
-                      ...previous,
-                      [clusterId]: value
-                    }))
-                  }
-                />
-              )}
-
-              {/* PAINEL EMPRESARIAL */}
-
-              {profile === 'Empresa' && (
-                <CompanyPanel />
-              )}
-
-              {/* MAPA E PREVENÇÃO */}
-
-              <div className="dashboard-grid">
-                <RegionMap cluster={cluster} />
-
-                <div className="care-card">
-                  <span className="care-icon">
-                    <ShieldCheck size={30} />
-                  </span>
-
-                  <p className="eyebrow">
-                    PREVENÇÃO NO DIA A DIA
-                  </p>
-
-                  <h2>
-                    Um pouco de preparo.
-                    <br />
-                    Muito mais segurança.
-                  </h2>
-
-                  <p>
-                    Documentos, remédios e um plano
-                    em família. Pequenas ações fazem
-                    a diferença.
-                  </p>
-
-                  <Button
-                    variant="secondary"
-                    onClick={() => setPage('guide')}
-                  >
-                    Abrir meu checklist
-                    <ArrowRight size={16} />
-                  </Button>
-
-                  <div className="care-bottom">
-                    <span>01</span>
-
-                    <p>
-                      Comece pelo essencial.
-                      <br />
-                      <strong>
-                        No seu tempo, com calma.
-                      </strong>
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* SIMULAÇÃO DE EVACUAÇÃO */}
-
-              {state === 'evacuation' && (
-                <div className="my-5">
-                  <ShelterRoute cluster={cluster} />
-
-                  <Button onClick={() => setSafe(true)}>
-                    {safe ? (
-                      <>
-                        <Check size={16} />
-                        Confirmação salva nesta sessão
-                      </>
-                    ) : (
-                      'Já estou em local seguro (simulação)'
-                    )}
-                  </Button>
-                </div>
-              )}
-
-              {/* RELATOS RESUMIDOS */}
-
-              <ReportList
-                api={api}
-                cluster={cluster}
-                compact
-                triage={profile === 'Defesa Civil'}
-                onNew={() => setForm(true)}
-              />
-
-              {/* COMPROMISSO ESG */}
-
-              <div className="esg-strip">
-                <Leaf size={25} />
-
-                <div>
-                  <strong>
-                    Uma rede de cuidado.
-                    Sem custo para o cidadão.
-                  </strong>
-
-                  <p>
-                    Monitoramento, ciência e participação
-                    unidos por comunidades mais resilientes.
-                  </p>
-                </div>
-
-                <Badge>
-                  ODS 11 + 13
-                </Badge>
-              </div>
             </>
+          )}
 
-          /* ===================================== */
-          /* PÁGINA: RELATOS                       */
-          /* ===================================== */
+          {page === 'overview' && (
+            citizen ? (
+              <>
+                <CitizenMetrics cluster={cluster} />
 
-          ) : page === 'reports' ? (
-            <ReportList
-              api={api}
-              cluster={cluster}
-              triage={profile === 'Defesa Civil'}
-              onNew={() => setForm(true)}
-            />
+                <div className={`citizen-grid ${red ? 'with-shelters' : ''}`}>
+                  <RegionMap
+                    {...mapProps}
+                    title="Sua região e as estacas"
+                  />
 
-          /* ===================================== */
-          /* PÁGINA: MAPA                          */
-          /* ===================================== */
+                  {red ? (
+                    <ShelterRoute
+                      cluster={cluster}
+                      shelters={shelters}
+                      selectedShelterId={selectedShelterId}
+                      onSelectShelter={setSelectedShelterId}
+                    />
+                  ) : (
+                    <section className="card preparation-card">
+                      <p className="eyebrow">PREVENÇÃO NO DIA A DIA</p>
 
-          ) : page === 'map' ? (
+                      <h2>
+                        Um plano para quem você quer proteger.
+                      </h2>
+
+                      <p>
+                        Organize documentos, itens essenciais e um ponto
+                        de encontro para sua família.
+                      </p>
+
+                      <Button
+                        variant="secondary"
+                        onClick={() => setPage('guide')}
+                      >
+                        Abrir minha preparação
+                        <ArrowRight size={16} />
+                      </Button>
+                    </section>
+                  )}
+                </div>
+
+                <ReportsWorkspace
+                  key={`citizen-${cluster.id}`}
+                  cluster={cluster}
+                  compact
+                />
+              </>
+            ) : civil ? (
+              <CivilPanel
+                key={cluster.id}
+                cluster={cluster}
+                decision={decisions[cluster.id]}
+                decisions={decisions}
+                regions={regions}
+                onSelectRegion={chooseRegion}
+                onDecision={value => {
+                  setDecisions(previous => ({
+                    ...previous,
+                    [cluster.id]: value
+                  }));
+                }}
+              />
+            ) : (
+              <CompanyPanel
+                cluster={cluster}
+                regions={regions}
+                decisions={decisions}
+                onSelectRegion={chooseRegion}
+              />
+            )
+          )}
+
+          {page === 'map' && (
             <>
               <RegionMap
-                cluster={cluster}
+                {...mapProps}
+                title={citizen
+                  ? 'Mapa da região'
+                  : 'Todas as áreas do seu painel'}
                 expanded
+                overview={!citizen}
               />
 
-              <p className="notice">
-                Este mapa apresenta áreas ilustrativas.
-                Abrigos e rotas de emergência precisam
-                de validação oficial antes de uso real.
-              </p>
-
-              {state === 'evacuation' && (
-                <ShelterRoute cluster={cluster} />
+              {red && (
+                <ShelterRoute
+                  cluster={cluster}
+                  shelters={shelters}
+                  selectedShelterId={selectedShelterId}
+                  onSelectShelter={setSelectedShelterId}
+                />
               )}
             </>
+          )}
 
-          /* ===================================== */
-          /* PÁGINA: GUIA DE PREPARAÇÃO            */
-          /* ===================================== */
-
-          ) : (
+          {page === 'guide' && citizen && (
             <>
               <Checklist />
 
-              <section className="card p-6 mt-5">
-                <h2>
-                  Como a rede Sentinela funciona
-                </h2>
+              <section className="card panel-padding contact-card">
+                <h2>Em uma situação real</h2>
 
-                <div className="cluster-grid">
-                  <div>
-                    <h3>01 · Observar</h3>
+                <p>
+                  Acompanhe a Defesa Civil e siga as orientações locais.
+                  Os abrigos do protótipo não são pontos oficiais.
+                </p>
 
-                    <p>
-                      Sensores medem o movimento do solo.
-                      Moradores contribuem com relatos.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3>02 · Analisar</h3>
-
-                    <p>
-                      Dados da encosta e da chuva
-                      ajudam a apontar alterações.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3>03 · Cuidar</h3>
-
-                    <p>
-                      A Defesa Civil avalia os indícios
-                      e autoriza as decisões sobre a população.
-                    </p>
-                  </div>
+                <div className="contact-links">
+                  <a href="tel:199">Defesa Civil · 199</a>
+                  <a href="tel:193">Bombeiros · 193</a>
                 </div>
               </section>
             </>
           )}
 
-          {/* AVISO ACADÊMICO */}
+          {page === 'reports' && account.role !== 'company' && (
+            <ReportsWorkspace
+              key={`${account.id}-${cluster.id}`}
+              cluster={cluster}
+              civil={civil}
+            />
+          )}
 
           <p className="academic-note">
-            Protótipo acadêmico · FIAP Global Solution 2026.2.
-            Indicadores de solo e decisões operacionais são simulados, não alertas reais.
-            Não substitui monitoramento ou orientações oficiais.
-            Os perfis são demonstrativos e não comprovam vínculo com órgãos públicos.
+            Protótipo acadêmico. Leituras, áreas de risco, gráficos e abrigos
+            são ilustrativos. As simulações deste navegador não emitem
+            alertas reais. Mapas: OpenStreetMap; clima, quando disponível:
+            Open-Meteo.
           </p>
 
           <Footer />
         </main>
       </div>
+    </div>
+  );
+}
 
-      {/* MODAL DE NOVO RELATO */}
+function CitizenMetrics({ cluster }) {
+  const { weather, error } = useWeather(cluster);
+
+  return (
+    <div className="metrics-grid">
+      <MetricCard
+        icon={CloudRain}
+        title="Precipitação atual"
+        value={weather && Number.isFinite(weather.precipitation)
+          ? weather.precipitation.toLocaleString('pt-BR')
+          : '—'}
+        unit="mm"
+        foot={error || 'Open-Meteo · dado meteorológico atual'}
+      />
+
+      <MetricCard
+        icon={Activity}
+        title="Movimento do solo"
+        value={cluster.rate.toLocaleString('pt-BR', {
+          maximumFractionDigits: 3
+        })}
+        unit="°/h"
+        foot="Leitura simulada da estaca de referência"
+      />
+
+      <MetricCard
+        icon={Droplets}
+        title="Umidade do solo"
+        value={cluster.humidity}
+        unit="%"
+        foot="Indicador demonstrativo"
+      />
+
+      <MetricCard
+        icon={Radio}
+        title="Estacas na região"
+        value={cluster.sensors}
+        unit="estacas"
+        foot={`Referência: ${cluster.sensor} · simulação`}
+      />
+    </div>
+  );
+}
+
+function ReportsWorkspace({ cluster, civil = false, compact = false }) {
+  const api = useReports();
+  const [form, setForm] = useState(false);
+  const [adminDraft, setAdminDraft] = useState('');
+
+  return (
+    <>
+      {civil && (
+        <section className="card admin-access">
+          <h2>Acesso à triagem de relatos</h2>
+
+          <p className="muted">
+            O login demonstrativo não concede acesso administrativo à API.
+            Informe a chave configurada no servidor para editar a triagem.
+          </p>
+
+          {api.adminKey ? (
+            <div className="admin-access-row">
+              <span>
+                Chave inserida; a API validará na próxima alteração.
+              </span>
+
+              <Button
+                variant="secondary"
+                onClick={() => api.setAdminKey('')}
+              >
+                Remover chave
+              </Button>
+            </div>
+          ) : (
+            <form
+              className="admin-access-row"
+              onSubmit={event => {
+                event.preventDefault();
+                api.setAdminKey(adminDraft);
+                setAdminDraft('');
+              }}
+            >
+              <label htmlFor="triage-key" className="sr-only">
+                Chave de triagem do servidor
+              </label>
+
+              <input
+                id="triage-key"
+                type="password"
+                autoComplete="off"
+                placeholder="Chave de triagem do servidor"
+                minLength={12}
+                required
+                value={adminDraft}
+                onChange={event => setAdminDraft(event.target.value)}
+              />
+
+              <Button type="submit">Habilitar triagem</Button>
+            </form>
+          )}
+        </section>
+      )}
+
+      <ReportList
+        api={api}
+        cluster={cluster}
+        triage={civil}
+        compact={compact}
+        onNew={() => setForm(true)}
+      />
 
       {form && (
         <ReportForm
           cluster={cluster}
           onSave={api.save}
+          onClose={() => setForm(false)}
           busy={api.busy}
           apiError={api.error}
-          onClose={() => setForm(false)}
         />
       )}
-    </div>
+    </>
   );
 }
